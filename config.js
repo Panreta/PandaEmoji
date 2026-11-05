@@ -4,6 +4,6 @@
 // The anon key is safe to publish: the Row Level Security rules in setup.sql
 // make sure only your signed-in account can read or change your data.
 window.PANDA_CONFIG = {
-  supabaseUrl: "https://hqbmygkomrqdcyqbwrlt.supabase.co/rest/v1/",
+  supabaseUrl: "https://hqbmygkomrqdcyqbwrlt.supabase.co",
   supabaseAnonKey: "sb_publishable_nOpWOpmTbgIQzIoedCzvLg_eb1QF45V"
 };
