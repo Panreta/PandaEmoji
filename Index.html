@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panda Notebook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F5F8F3; --page:#FFFFFF; --ink:#232822; --ink-soft:#5B6558;
+  --mist:#E2EADF; --rule:#D3DECF; --bamboo:#4F8F3E; --bamboo-node:#3E7330;
+  --leaf:#86C062; --blush:#EE9C92; --sky:#EAF3EE; --focus:#2F7DD1;
+  --f1:#A7B0A4; --f2:#C3CC8E; --f3:#8DC56A; --f4:#4FA654; --f5:#EE9C92;
+  --grass:#CFE6BE; --grass2:#C3DEAF; --grass-line:#B5D29F; --soil:#A9835E; --soil2:#8C6A4A;
+  --hand:"Kalam","Comic Sans MS","Segoe Print",cursive;
+  --sans:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#141813; --page:#1C211B; --ink:#E8EEE5; --ink-soft:#A3AF9F;
+    --mist:#273026; --rule:#323D30; --bamboo:#6FB35A; --bamboo-node:#8CCB76;
+    --leaf:#7FBF5C; --sky:#182019; --focus:#7DB7F5;
+    --f1:#5F6A5C; --f2:#8E9A57; --f3:#6FAE4E; --f4:#4E9E4E; --f5:#E88D83;
+    --grass:#2E4229; --grass2:#2A3C25; --grass-line:#3A5233; --soil:#5E4733; --soil2:#4C3929;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#141813; --page:#1C211B; --ink:#E8EEE5; --ink-soft:#A3AF9F;
+  --mist:#273026; --rule:#323D30; --bamboo:#6FB35A; --bamboo-node:#8CCB76;
+  --leaf:#7FBF5C; --sky:#182019; --focus:#7DB7F5;
+  --f1:#5F6A5C; --f2:#8E9A57; --f3:#6FAE4E; --f4:#4E9E4E; --f5:#E88D83;
+  --grass:#2E4229; --grass2:#2A3C25; --grass-line:#3A5233; --soil:#5E4733; --soil2:#4C3929;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.5}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:6px}
+.wrap{max-width:1180px;margin:0 auto;padding:20px 18px 48px}
+
+header{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+header svg{flex:none}
+h1{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;letter-spacing:-.02em;margin:0;line-height:1}
+.sub{color:var(--ink-soft);margin:4px 0 0;font-size:.95rem}
+.tabs{margin-left:auto;display:flex;gap:6px}
+.tab{border:1.5px solid var(--ink);background:var(--ink);color:var(--page);border-radius:999px;padding:4px 14px;font-weight:600;font-size:.9rem}
+.tab.ghost{background:transparent;color:var(--ink-soft);border-style:dashed;border-color:var(--rule);cursor:not-allowed}
+
+.grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:22px;align-items:start}
+@media (max-width:880px){.grid{grid-template-columns:1fr}}
+
+/* journal page */
+.journal{background:var(--page);border-radius:4px 18px 18px 4px;padding:22px 22px 26px 34px;position:relative;
+  box-shadow:0 1px 0 var(--rule), -6px 0 0 var(--ink) inset;}
+.datebar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.datebar h2{font-size:1.35rem;margin:0;font-weight:600;flex:1;min-width:0}
+.datebar h2 small{display:block;color:var(--ink-soft);font-weight:400;font-size:.85rem}
+.icon-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--rule);background:transparent;cursor:pointer;display:grid;place-items:center;font-size:1.1rem}
+.icon-btn:hover{border-color:var(--ink)}
+.today-btn{border:none;background:none;color:var(--bamboo);font-weight:600;cursor:pointer;padding:4px 6px}
+input[type=date]{border:1.5px solid var(--rule);border-radius:10px;padding:5px 8px;background:var(--page)}
+
+.lines{list-style:none;margin:14px 0 18px;padding:0;
+  background-image:linear-gradient(to bottom, transparent 43px, var(--rule) 43px, var(--rule) 44px);background-size:100% 44px;min-height:132px}
+.lines li{display:flex;align-items:flex-start;gap:10px;min-height:44px;padding:4px 2px 0}
+.dot{width:12px;height:12px;border-radius:50%;flex:none}
+.lines li > .dot{margin-top:13px}
+.lines li > .meta{margin-top:11px}
+.lines li > .row-btn{margin-top:6px}
+.bwrap{flex:1;min-width:0}
+.thumbs{display:flex;gap:6px;flex-wrap:wrap;padding:0 0 8px}
+.media-btn{width:64px;height:64px;border-radius:10px;overflow:hidden;border:none;padding:0;cursor:zoom-in;background:var(--mist);position:relative;flex:none}
+.media-btn img,.media-btn video{width:100%;height:100%;object-fit:cover;display:block}
+.play{position:absolute;inset:0;display:grid;place-items:center;color:#fff;font-size:1.1rem;text-shadow:0 1px 3px rgba(0,0,0,.6);pointer-events:none}
+.attach{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.attach-btn{border:1.5px dashed var(--rule);background:transparent;border-radius:12px;padding:7px 12px;cursor:pointer;font-size:.85rem;color:var(--ink-soft)}
+.attach-btn:hover{border-color:var(--ink);color:var(--ink)}
+.pending{position:relative;width:56px;height:56px;border-radius:10px;overflow:hidden;background:var(--mist)}
+.pending img,.pending video{width:100%;height:100%;object-fit:cover;display:block}
+.pending button{position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.7rem;cursor:pointer;line-height:1;padding:0}
+.note{font-size:.8rem;color:var(--ink-soft);margin:0}
+.lightbox{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;z-index:50;padding:calc(56px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))}
+.lightbox.open{display:flex}
+.lightbox img,.lightbox video{max-width:100%;max-height:100%;border-radius:12px;display:block}
+.lightbox .close{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:14px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.15);color:#fff;font-size:1.1rem;cursor:pointer}
+.moment-media{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:6px;margin-top:8px}
+.moment-media .media-btn{width:100%;height:auto;aspect-ratio:1}
+.btext{font-family:var(--hand);font-size:1.2rem;flex:1;min-width:0;overflow-wrap:anywhere;line-height:1.25;padding:6px 0}
+.meta{font-size:.78rem;color:var(--ink-soft);white-space:nowrap}
+.chip{display:inline-block;border-radius:999px;padding:0 8px;background:var(--mist);margin-left:4px}
+.row-btn{border:none;background:none;cursor:pointer;color:var(--ink-soft);padding:4px;border-radius:6px;font-size:.85rem}
+.row-btn:hover{color:var(--ink);background:var(--mist)}
+.empty{font-family:var(--hand);font-size:1.15rem;color:var(--ink-soft);padding-top:8px}
+
+form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
+.write{border:none;border-bottom:2px solid var(--ink);background:transparent;font-family:var(--hand);font-size:1.25rem;padding:6px 2px;width:100%}
+.write::placeholder{color:var(--ink-soft);opacity:.8}
+.write:focus{outline:none;border-bottom-color:var(--bamboo)}
+.field-label{font-size:.82rem;color:var(--ink-soft);margin-bottom:4px}
+.feels{display:flex;gap:6px;flex-wrap:wrap}
+.feel{border:1.5px solid var(--rule);background:transparent;border-radius:12px;padding:4px 8px;cursor:pointer;display:flex;align-items:center;gap:6px;font-size:.85rem}
+.feel[aria-pressed=true]{border-color:var(--ink);background:var(--mist)}
+.feel .dot{width:10px;height:10px}
+.opts{display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end}
+.tags{display:flex;gap:6px;flex-wrap:wrap}
+.tagb{border:1.5px solid var(--rule);background:transparent;border-radius:999px;padding:2px 11px;cursor:pointer;font-size:.85rem}
+.tagb[aria-pressed=true]{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.mins{width:84px;border:1.5px solid var(--rule);border-radius:10px;padding:5px 8px;background:var(--page)}
+.actions{display:flex;gap:10px;align-items:center}
+.primary{background:var(--bamboo);color:#fff;border:none;border-radius:12px;padding:9px 18px;font-weight:600;cursor:pointer}
+.primary:hover{filter:brightness(1.08)}
+.link{background:none;border:none;color:var(--ink-soft);cursor:pointer;text-decoration:underline}
+
+/* right side */
+.panel{margin-bottom:22px}
+.panel h3{font-size:1.05rem;margin:0 0 2px;font-weight:600}
+.panel p.hint{margin:0 0 10px;color:var(--ink-soft);font-size:.85rem}
+.grove-box{background:var(--sky);border-radius:18px;padding:14px 10px 6px;overflow-x:auto}
+.grove-box svg{display:block;width:100%;max-width:620px;height:auto;margin:0 auto}
+.stalk{cursor:pointer}
+.stalk:focus{outline:none}
+.stalk:focus-visible .hit{stroke:var(--focus);stroke-width:2.5}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0 0}
+@media (max-width:520px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stat{background:var(--page);border-radius:14px;padding:10px 12px}
+.stat b{display:block;font-size:1.5rem;font-weight:800;line-height:1.1}
+.stat span{font-size:.8rem;color:var(--ink-soft)}
+
+.cal-wrap{overflow-x:auto}
+.cal{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,16px);grid-auto-columns:16px;gap:4px;padding:2px}
+.cell{border-radius:4px;background:var(--mist);border:none;padding:0;cursor:pointer}
+.cell.future{opacity:.3;cursor:default}
+.cell.sel{outline:2px solid var(--ink);outline-offset:1px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:.78rem;color:var(--ink-soft);align-items:center}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+
+.mix{display:grid;gap:8px}
+.mixrow{display:grid;grid-template-columns:110px 1fr 54px;gap:10px;align-items:center;font-size:.88rem}
+.bar{height:14px;border-radius:7px;background:var(--mist);display:flex;overflow:hidden}
+.bar span{height:100%}
+.mixrow .n{color:var(--ink-soft);text-align:right;font-size:.8rem}
+
+.bright{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.bright li{background:var(--page);border-radius:14px;padding:10px 14px;border-left:5px solid var(--f5)}
+.bright q{font-family:var(--hand);font-size:1.15rem;quotes:"“" "”"}
+.bright small{display:block;color:var(--ink-soft);font-size:.78rem}
+
+[hidden]{display:none !important}
+.login{min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px}
+.login-card{background:var(--page);border-radius:22px;padding:28px 26px;width:min(380px,100%);text-align:center}
+.login-card h1{margin:10px 0 4px}
+.login-card form{border:none;padding:0;margin-top:18px;text-align:left}
+.login-card label{display:grid;gap:4px;font-size:.85rem;color:var(--ink-soft)}
+.login-card input{border:1.5px solid var(--rule);border-radius:12px;padding:9px 12px;background:var(--page);font-size:1rem;color:var(--ink)}
+.login-card .primary{width:100%;margin-top:4px}
+.login-msg{min-height:1.3em;font-size:.85rem;color:#C2473A;margin:4px 0 0}
+.signout{border:1.5px solid var(--rule);background:transparent;border-radius:999px;padding:4px 12px;font-size:.85rem;cursor:pointer;color:var(--ink-soft)}
+.signout:hover{border-color:var(--ink);color:var(--ink)}
+.status{font-size:.78rem;color:var(--ink-soft);margin-top:24px}
+.player{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
+.pbar{display:flex;gap:6px}
+.pbtn{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--rule);background:var(--page);color:var(--ink);font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);display:grid;place-items:center}
+.pbtn.on{background:var(--bamboo);color:#fff;border-color:var(--bamboo)}
+.pbtn.more{width:40px;height:40px;font-size:1rem}
+.ppanel{background:var(--page);border:1.5px solid var(--rule);border-radius:16px;padding:14px;width:230px;box-shadow:0 6px 20px rgba(0,0,0,.16);display:grid;gap:10px}
+.ppanel .seg{display:flex;gap:6px}
+.ppanel .seg button{flex:1;border:1.5px solid var(--rule);background:transparent;color:var(--ink-soft);border-radius:10px;padding:6px 4px;font-size:.85rem;cursor:pointer}
+.ppanel .seg button.on{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.ppanel label{display:grid;gap:4px;font-size:.8rem;color:var(--ink-soft)}
+.ppanel input[type=range]{width:100%;accent-color:var(--bamboo)}
+.ppanel .pick{border:1.5px dashed var(--rule);background:transparent;border-radius:10px;padding:7px;cursor:pointer;font-size:.82rem;color:var(--ink-soft)}
+.ppanel .pick:hover{border-color:var(--ink);color:var(--ink)}
+.ppanel .pnote{margin:0;font-size:.76rem;color:var(--ink-soft)}
+@keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
+@keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.04)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@keyframes bubblein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+#gardenPanda{transform-box:fill-box;transform-origin:bottom center;animation:sway 4s ease-in-out infinite}
+#gardenPanda .breath{transform-box:fill-box;transform-origin:center;animation:breathe 3.2s ease-in-out infinite}
+#pandaBubble{animation:bubblein .4s ease both}
+@keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.grow{transform-box:fill-box;transform-origin:bottom;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
+@media (prefers-reduced-motion: reduce){.grow{animation:none}#gardenPanda,#gardenPanda .breath,#pandaBubble{animation:none}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+</head>
+<body>
+<section class="login" id="login" hidden>
+  <div class="login-card">
+    <svg width="84" height="84" viewBox="0 4 64 60" aria-hidden="true" id="loginPanda"></svg>
+    <h1>Panda Notebook</h1>
+    <p class="sub">Sign in to open your notebook.</p>
+    <form id="loginForm">
+      <label>Email<input type="email" id="loginEmail" autocomplete="username" required></label>
+      <label>Password<input type="password" id="loginPass" autocomplete="current-password" required></label>
+      <button class="primary" type="submit" id="loginBtn">Sign in</button>
+      <p class="login-msg" id="loginMsg" role="alert"></p>
+    </form>
+  </div>
+</section>
+<div class="wrap" id="app" hidden>
+  <header>
+    <svg width="58" height="58" viewBox="0 4 64 60" aria-hidden="true" id="headerPanda"></svg>
+    <div>
+      <h1>Panda Notebook</h1>
+      <p class="sub">Write a few bullets a day. Watch your bamboo grow.</p>
+    </div>
+    <nav class="tabs" aria-label="Notebooks">
+      <span class="tab" aria-current="page">🎸 Guitar</span>
+      <span class="tab ghost" title="More notebooks coming soon">+ more</span>
+      <button class="signout" id="signOut" type="button">Sign out</button>
+    </nav>
+  </header>
+
+  <div class="grid">
+    <section class="journal" aria-label="Journal page">
+      <div class="datebar">
+        <button class="icon-btn" id="prev" aria-label="Previous day">‹</button>
+        <h2 id="dateTitle"></h2>
+        <button class="icon-btn" id="next" aria-label="Next day">›</button>
+      </div>
+      <div class="datebar" style="gap:10px">
+        <input type="date" id="datePick" aria-label="Pick a date">
+        <button class="today-btn" id="todayBtn">Go to today</button>
+      </div>
+
+      <ul class="lines" id="bullets"></ul>
+
+      <form id="form" autocomplete="off">
+        <input class="write" id="text" maxlength="240" placeholder="What happened at practice?" aria-label="Bullet text">
+        <div id="attachRow" hidden>
+          <div class="attach">
+            <button type="button" class="attach-btn" id="attachBtn">📷 Add photos or videos</button>
+            <input type="file" id="fileIn" accept="image/*,video/*" multiple hidden>
+            <div class="attach" id="pendingList"></div>
+          </div>
+          <p class="note" id="attachNote"></p>
+        </div>
+        <div>
+          <div class="field-label">How did it feel?</div>
+          <div class="feels" id="feels" role="group" aria-label="Feeling"></div>
+        </div>
+        <div class="opts">
+          <div>
+            <div class="field-label">Focus</div>
+            <div class="tags" id="tags" role="group" aria-label="Focus"></div>
+          </div>
+          <label>
+            <div class="field-label">Minutes</div>
+            <input class="mins" id="mins" type="number" min="0" max="600" inputmode="numeric" placeholder="0">
+          </label>
+        </div>
+        <div class="actions">
+          <button class="primary" type="submit" id="submitBtn">Add bullet</button>
+          <button class="link" type="button" id="cancelEdit" hidden>Cancel edit</button>
+        </div>
+      </form>
+    </section>
+
+    <section aria-label="Your practice, visualized">
+      <div class="panel">
+        <h3>Your bamboo garden</h3>
+        <p class="hint">Every day you write this month, bamboo sprouts on a random patch of the garden. Each bullet adds a stalk, more minutes make them taller, leaf color shows the feeling, and pink blossoms mark your best moments. Tap a clump to open that day, or pick a date in another month to visit that garden.</p>
+        <div class="grove-box"><svg id="grove" viewBox="0 0 470 352" role="img" aria-label="This month’s bamboo garden"></svg></div>
+        <div class="stats" id="stats"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Practice calendar</h3>
+        <p class="hint">The last 16 weeks, colored by how the day felt on average.</p>
+        <div class="cal-wrap"><div class="cal" id="cal"></div></div>
+        <div class="legend" id="legend"></div>
+      </div>
+
+      <div class="panel">
+        <h3>What you’ve been working on</h3>
+        <p class="hint">Bullets per focus area, split by feeling.</p>
+        <div class="mix" id="mix"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Moments you enjoyed</h3>
+        <p class="hint">Your Good and Glowing bullets, with the photos and videos you added.</p>
+        <ul class="bright" id="bright"></ul>
+      </div>
+    </section>
+  </div>
+  <p class="status" id="status">Loading your notebook…</p>
+</div>
+<div class="player" id="player">
+  <div class="ppanel" id="ppanel" hidden>
+    <div class="seg" role="group" aria-label="Music source">
+      <button id="srcCalm" class="on" type="button">Soothing</button>
+      <button id="srcMine" type="button">My music</button>
+    </div>
+    <label>Volume
+      <input type="range" id="vol" min="0" max="100" value="40" aria-label="Music volume">
+    </label>
+    <button class="pick" id="pickMusic" type="button">Choose an audio file…</button>
+    <input type="file" id="musicFile" accept="audio/*" hidden>
+    <p class="pnote" id="musicNote">Built-in soothing tune.</p>
+  </div>
+  <div class="pbar">
+    <button class="pbtn more" id="musicMore" type="button" aria-label="Music options" aria-expanded="false">⋯</button>
+    <button class="pbtn" id="musicBtn" type="button" aria-label="Play background music" aria-pressed="false">▶</button>
+  </div>
+</div>
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Photo or video">
+  <button class="close" id="lbClose" aria-label="Close">✕</button>
+  <div id="lbBody"></div>
+</div>
+
+<script>
+(() => {
+  const NB = "guitar";
+  const FEELS = [
+    {v:1, e:"😣", l:"Rough"}, {v:2, e:"😐", l:"Meh"}, {v:3, e:"🙂", l:"Okay"},
+    {v:4, e:"😊", l:"Good"},  {v:5, e:"🤩", l:"Glowing"}
+  ];
+  const TAGS = ["Chords","Delighted","Song","Theory","Other"];
+  const feelVar = v => `var(--f${v})`;
+  const $ = id => document.getElementById(id);
+
+  // one cute, round panda drawn in a 64-unit box, used in the header and the garden
+  const PANDA_HEAD = `
+    <circle cx="13" cy="17" r="9.5" fill="#232822"/><circle cx="51" cy="17" r="9.5" fill="#232822"/>
+    <circle cx="13.5" cy="17.5" r="4.5" fill="#4A4F48"/><circle cx="50.5" cy="17.5" r="4.5" fill="#4A4F48"/>
+    <ellipse cx="32" cy="37" rx="25" ry="24" fill="#fff" stroke="#232822" stroke-width="2.2"/>
+    <ellipse cx="21" cy="38" rx="7.5" ry="9" fill="#232822" transform="rotate(28 21 38)"/>
+    <ellipse cx="43" cy="38" rx="7.5" ry="9" fill="#232822" transform="rotate(-28 43 38)"/>
+    <path d="M18.3 39.6 Q22 35.2 25.7 39.6 M38.3 39.6 Q42 35.2 45.7 39.6" stroke="#fff" stroke-width="1.9" fill="none" stroke-linecap="round"/>
+    <ellipse cx="32" cy="45" rx="3.2" ry="2.2" fill="#232822"/>
+    <path d="M32 47.2 V48.6" stroke="#232822" stroke-width="1.4" stroke-linecap="round"/>
+    <path d="M26.6 48.6 Q32 56.5 37.4 48.6 Z" fill="#232822" stroke="#232822" stroke-width="1.4" stroke-linejoin="round"/>
+    <ellipse cx="32" cy="52.4" rx="2.6" ry="1.5" fill="#EE9C92"/>
+    <ellipse cx="14.5" cy="48" rx="4" ry="2.8" fill="#EE9C92" opacity=".75"/><ellipse cx="49.5" cy="48" rx="4" ry="2.8" fill="#EE9C92" opacity=".75"/>`;
+  const PANDA_BODY = `
+    <ellipse cx="32" cy="72" rx="23" ry="18" fill="#fff" stroke="#232822" stroke-width="2.2"/>
+    <ellipse cx="12" cy="68" rx="6.5" ry="9" fill="#232822" transform="rotate(20 12 68)"/>
+    <ellipse cx="52" cy="68" rx="6.5" ry="9" fill="#232822" transform="rotate(-20 52 68)"/>
+    <ellipse cx="19" cy="87" rx="9" ry="6" fill="#232822"/><ellipse cx="45" cy="87" rx="9" ry="6" fill="#232822"/>
+    <ellipse cx="19" cy="87.5" rx="4" ry="2.8" fill="#EE9C92"/><ellipse cx="45" cy="87.5" rx="4" ry="2.8" fill="#EE9C92"/>`;
+  $("headerPanda").innerHTML = PANDA_HEAD;
+
+  // ---------- dates ----------
+  const iso = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  const parse = s => { const [y,m,d] = s.split("-").map(Number); return new Date(y, m-1, d); };
+  const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate()+n); return iso(d); };
+  const todayISO = () => iso(new Date());
+  const pretty = s => parse(s).toLocaleDateString("en-US",{weekday:"long", month:"long", day:"numeric"});
+
+  // ---------- state ----------
+  const entries = new Map(); // date -> {nb,date,items:[]}
+  let selected = todayISO();
+  let feel = 4, tag = "Chords", editing = null;
+  let pendingFiles = [], keptMedia = [], removedMedia = [];
+  const MAX_BYTES = 50 * 1024 * 1024; // Supabase free plan: 50 MB per file
+
+  // ---------- Supabase ----------
+  const CFG = window.PANDA_CONFIG || {};
+  const sb = (window.supabase && CFG.supabaseUrl && CFG.supabaseAnonKey)
+    ? window.supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey) : null;
+  const BUCKET = "media";
+  let uid = null;
+  const signed = new Map();
+  async function signPaths(paths) {
+    const need = [...new Set(paths)].filter(p => p && !signed.has(p));
+    if (!need.length) return;
+    const { data, error } = await sb.storage.from(BUCKET).createSignedUrls(need, 60 * 60 * 24);
+    if (error) return;
+    data.forEach(d => { if (d.signedUrl) signed.set(d.path, d.signedUrl); });
+  }
+  const mediaUrl = m => signed.get(m.path) || "";
+  const mediaStore = {
+    async upload(file) {
+      const ext = ((file.name.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8)) || "bin";
+      const path = `${uid}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type, upsert: false });
+      if (error) throw error;
+      await signPaths([path]);
+      return path;
+    },
+    remove(list) {
+      const paths = (list || []).map(m => m.path).filter(Boolean);
+      if (paths.length) sb.storage.from(BUCKET).remove(paths).catch(() => {});
+    }
+  };
+  let firstGrow = true;
+
+  // ---------- storage: one row per notebook per day in the "entries" table ----------
+  const store = {
+    saving: new Map(),
+    async load() {
+      setStatus("Loading your notebook…");
+      const { data, error } = await sb.from("entries").select("date, tile, items").eq("nb", NB);
+      if (error) { setStatus("Couldn’t load your notebook: " + error.message); return; }
+      entries.clear();
+      data.forEach(r => entries.set(r.date, { nb: NB, date: r.date, tile: r.tile, items: r.items || [] }));
+      await signPaths(data.flatMap(r => (r.items || []).flatMap(it => (it.media || []).map(m => m.path))));
+      setStatus("Synced.");
+      render();
+    },
+    async save(date) {
+      const prev = this.saving.get(date) || Promise.resolve();
+      const next = prev.then(async () => {
+        const cur = entries.get(date);
+        const { error } = (!cur || !cur.items.length)
+          ? await sb.from("entries").delete().eq("nb", NB).eq("date", date)
+          : await sb.from("entries").upsert({
+              user_id: uid, nb: NB, date,
+              tile: Number.isInteger(cur.tile) ? cur.tile : null,
+              items: cur.items, updated_at: new Date().toISOString()
+            }, { onConflict: "user_id,nb,date" });
+        if (error) throw error;
+        setStatus("Saved.");
+      }).catch(err => setStatus("Couldn’t save that change: " + ((err && err.message) || "check your connection") + "."));
+      this.saving.set(date, next);
+      await next;
+    }
+  };
+  const setStatus = t => { $("status").textContent = t; };
+
+  // ---------- journal ----------
+  function buildControls() {
+    $("feels").innerHTML = "";
+    FEELS.forEach(f => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "feel";
+      b.setAttribute("aria-pressed", f.v === feel);
+      b.innerHTML = `<span class="dot" style="background:${feelVar(f.v)}"></span>${f.e} ${f.l}`;
+      b.onclick = () => { feel = f.v; buildControls(); };
+      $("feels").appendChild(b);
+    });
+    $("tags").innerHTML = "";
+    TAGS.forEach(t => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "tagb"; b.textContent = t;
+      b.setAttribute("aria-pressed", t === tag);
+      b.onclick = () => { tag = t; buildControls(); };
+      $("tags").appendChild(b);
+    });
+  }
+
+  function renderJournal() {
+    const t = todayISO();
+    $("dateTitle").innerHTML = "";
+    const h = document.createElement("span"); h.textContent = pretty(selected);
+    const sm = document.createElement("small");
+    sm.textContent = selected === t ? "Today" : selected === addDays(t,-1) ? "Yesterday" : selected;
+    $("dateTitle").append(h, sm);
+    $("datePick").value = selected;
+    $("next").disabled = selected >= t;
+    $("next").style.opacity = selected >= t ? .35 : 1;
+
+    const list = $("bullets"); list.innerHTML = "";
+    const items = (entries.get(selected) || {items:[]}).items;
+    if (!items.length) {
+      const li = document.createElement("li");
+      li.className = "empty";
+      li.textContent = selected === t ? "Nothing yet today. Even “tuned up and played for five minutes” counts." : "No bullets on this day. You can still add some.";
+      list.appendChild(li);
+    }
+    items.forEach(it => {
+      const li = document.createElement("li");
+      const dot = document.createElement("span"); dot.className = "dot"; dot.style.background = feelVar(it.feel);
+      dot.title = FEELS[it.feel-1].l;
+      const wrap = document.createElement("div"); wrap.className = "bwrap";
+      const tx = document.createElement("div"); tx.className = "btext"; tx.textContent = it.text;
+      wrap.appendChild(tx);
+      if (it.media && it.media.length) {
+        const th = document.createElement("div"); th.className = "thumbs";
+        it.media.forEach(m => th.appendChild(mediaButton(m)));
+        wrap.appendChild(th);
+      }
+      const meta = document.createElement("span"); meta.className = "meta";
+      meta.innerHTML = (it.mins ? `${it.mins} min` : "") + `<span class="chip"></span>`;
+      meta.querySelector(".chip").textContent = it.tag;
+      const ed = document.createElement("button"); ed.className = "row-btn"; ed.textContent = "Edit";
+      ed.setAttribute("aria-label", "Edit bullet");
+      ed.onclick = () => startEdit(it);
+      const del = document.createElement("button"); del.className = "row-btn"; del.textContent = "✕";
+      del.setAttribute("aria-label", "Delete bullet");
+      del.onclick = () => removeItem(it.id);
+      li.append(dot, wrap, meta, ed, del);
+      list.appendChild(li);
+    });
+  }
+
+  function startEdit(it) {
+    editing = it.id;
+    $("text").value = it.text; $("mins").value = it.mins || "";
+    feel = it.feel; tag = it.tag; buildControls();
+    pendingFiles.forEach(f => URL.revokeObjectURL(f.url));
+    pendingFiles = []; keptMedia = [...(it.media || [])]; removedMedia = []; renderPending();
+    $("submitBtn").textContent = "Save bullet"; $("cancelEdit").hidden = false;
+    $("text").focus();
+  }
+  function resetForm() {
+    editing = null; $("text").value = ""; $("mins").value = "";
+    $("submitBtn").textContent = "Add bullet"; $("cancelEdit").hidden = true;
+    pendingFiles.forEach(f => URL.revokeObjectURL(f.url));
+    pendingFiles = []; keptMedia = []; removedMedia = []; renderPending();
+    $("attachNote").textContent = "";
+  }
+  function removeItem(id) {
+    const e = entries.get(selected); if (!e) return;
+    const gone = e.items.find(x => x.id === id);
+    if (gone && gone.media) mediaStore.remove(gone.media);
+    e.items = e.items.filter(x => x.id !== id);
+    if (!e.items.length) entries.delete(selected);
+    if (editing === id) resetForm();
+    render(); store.save(selected);
+  }
+
+  $("form").addEventListener("submit", async ev => {
+    ev.preventDefault();
+    const text = $("text").value.trim();
+    if (!text) { $("text").focus(); return; }
+    const date = selected, editId = editing;
+    const mins = Math.max(0, Math.min(600, parseInt($("mins").value, 10) || 0));
+    const media = [...keptMedia];
+    if (pendingFiles.length) {
+      const btn = $("submitBtn"), label = btn.textContent;
+      btn.disabled = true;
+      try {
+        for (let k = 0; k < pendingFiles.length; k++) {
+          btn.textContent = `Uploading ${k + 1} of ${pendingFiles.length}…`;
+          const f = pendingFiles[k].file;
+          const path = await mediaStore.upload(f);
+          media.push({path, kind: f.type.startsWith("video") ? "video" : "image"});
+        }
+      } catch (err) {
+        btn.disabled = false; btn.textContent = label;
+        $("attachNote").textContent = "Upload didn’t finish. Check your connection and try again.";
+        return;
+      }
+      btn.disabled = false;
+    }
+    mediaStore.remove(removedMedia);
+    let e = entries.get(date);
+    if (!e) { e = {nb:NB, date, tile:pickTile(date), items:[]}; entries.set(date, e); }
+    if (editId) {
+      const it = e.items.find(x => x.id === editId);
+      if (it) Object.assign(it, {text, mins, feel, tag, media});
+    } else {
+      e.items.push({id: Date.now().toString(36) + Math.random().toString(36).slice(2,6), text, mins, feel, tag, media});
+    }
+    resetForm(); render(); store.save(date);
+    $("text").focus();
+  });
+
+  // ---------- attachments ----------
+  $("attachBtn").onclick = () => $("fileIn").click();
+  $("fileIn").onchange = ev => {
+    const files = [...ev.target.files]; ev.target.value = "";
+    const tooBig = files.filter(f => f.size > MAX_BYTES);
+    files.filter(f => f.size <= MAX_BYTES && /^(image|video)\//.test(f.type))
+         .forEach(f => pendingFiles.push({file: f, url: URL.createObjectURL(f)}));
+    $("attachNote").textContent = tooBig.length ? `${tooBig.map(f => f.name).join(", ")} is over 50 MB. Try a shorter clip or a smaller photo.` : "";
+    renderPending();
+  };
+  function renderPending() {
+    const box = $("pendingList"); box.innerHTML = "";
+    const add = (kind, src, onRemove) => {
+      const d = document.createElement("div"); d.className = "pending";
+      const m = document.createElement(kind === "video" ? "video" : "img");
+      m.src = src; if (kind === "video") { m.muted = true; m.preload = "metadata"; } else m.alt = "";
+      const x = document.createElement("button"); x.type = "button"; x.textContent = "✕"; x.setAttribute("aria-label", "Remove attachment");
+      x.onclick = onRemove;
+      d.append(m, x); box.appendChild(d);
+    };
+    keptMedia.forEach(m => add(m.kind, mediaUrl(m), () => { keptMedia = keptMedia.filter(k => k !== m); removedMedia.push(m); renderPending(); }));
+    pendingFiles.forEach(p => add(p.file.type.startsWith("video") ? "video" : "image", p.url,
+      () => { URL.revokeObjectURL(p.url); pendingFiles = pendingFiles.filter(k => k !== p); renderPending(); }));
+  }
+  function mediaButton(m) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "media-btn";
+    b.setAttribute("aria-label", m.kind === "video" ? "Play video" : "Open photo");
+    const el2 = document.createElement(m.kind === "video" ? "video" : "img");
+    el2.src = mediaUrl(m); el2.loading = "lazy";
+    if (m.kind === "video") { el2.muted = true; el2.preload = "metadata"; } else el2.alt = "";
+    b.appendChild(el2);
+    if (m.kind === "video") { const pl = document.createElement("span"); pl.className = "play"; pl.textContent = "▶"; b.appendChild(pl); }
+    b.onclick = () => openLightbox(m);
+    return b;
+  }
+  let lastFocus = null;
+  function openLightbox(m) {
+    lastFocus = document.activeElement;
+    const body = $("lbBody"); body.innerHTML = "";
+    const v = document.createElement(m.kind === "video" ? "video" : "img");
+    v.src = mediaUrl(m);
+    if (m.kind === "video") { v.controls = true; v.autoplay = true; v.playsInline = true; } else v.alt = "";
+    body.appendChild(v);
+    $("lightbox").classList.add("open"); $("lbClose").focus();
+  }
+  function closeLightbox() {
+    $("lightbox").classList.remove("open"); $("lbBody").innerHTML = "";
+    if (lastFocus) lastFocus.focus();
+  }
+  $("lbClose").onclick = closeLightbox;
+  $("lightbox").addEventListener("click", e => { if (e.target.id === "lightbox" || e.target.id === "lbBody") closeLightbox(); });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && $("lightbox").classList.contains("open")) closeLightbox(); });
+  $("cancelEdit").onclick = resetForm;
+  $("prev").onclick = () => go(addDays(selected,-1));
+  $("next").onclick = () => { if (selected < todayISO()) go(addDays(selected,1)); };
+  $("todayBtn").onclick = () => go(todayISO());
+  $("datePick").onchange = e => { if (e.target.value && e.target.value <= todayISO()) go(e.target.value); };
+  function go(d) { selected = d; resetForm(); render(); }
+
+  // ---------- helpers ----------
+  const dayStats = d => {
+    const e = entries.get(d); if (!e || !e.items.length) return null;
+    const mins = e.items.reduce((a,x) => a + (x.mins||0), 0);
+    const avg = e.items.reduce((a,x) => a + x.feel, 0) / e.items.length;
+    return {mins, avg, items:e.items};
+  };
+
+  // ---------- grove ----------
+  const NS = "http://www.w3.org/2000/svg";
+  const el = (tag, attrs, parent) => { const n = document.createElementNS(NS, tag); for (const k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; };
+
+  // ---------- garden layout: each written day gets its own random tile in that month's plot ----------
+  const TILES = 35;
+  const hashStr = s => { let h = 2166136261; for (const ch of s) h = Math.imul(h ^ ch.charCodeAt(0), 16777619); return h >>> 0; };
+  function layoutMonth(mk) {
+    const days = [...entries.values()].filter(e => e.date.slice(0,7) === mk && e.items.length).sort((a,b) => a.date.localeCompare(b.date));
+    const used = new Map(), out = new Map();
+    days.forEach(e => { if (Number.isInteger(e.tile) && e.tile >= 0 && e.tile < TILES && !used.has(e.tile)) { used.set(e.tile, e.date); out.set(e.date, e.tile); } });
+    days.forEach(e => { if (out.has(e.date)) return; let k = hashStr(e.date) % TILES; while (used.has(k)) k = (k + 1) % TILES; used.set(k, e.date); out.set(e.date, k); });
+    return out;
+  }
+  function pickTile(date) {
+    const taken = new Set(layoutMonth(date.slice(0,7)).values());
+    const free = []; for (let k = 0; k < TILES; k++) if (!taken.has(k)) free.push(k);
+    return free.length ? free[Math.floor(Math.random() * free.length)] : 0;
+  }
+
+  // the garden panda's prompts about the day's mood — a few per situation,
+  // rotated by pandaMsg so the bubble changes over time.
+  function pandaLines(d) {
+    const s = dayStats(d), isToday = d === todayISO(), when = isToday ? "today" : "that day";
+    if (!s) return isToday ? [
+      ["How’s your mood", "today? Write a", "bullet for me 🎋"],
+      ["Psst… what did", "you play today? 🎸", "Plant it here."],
+      ["Even five quiet", "minutes counts.", "Tell me one 🐾"],
+      ["The garden’s", "waiting. What", "happened today?"]
+    ] : [
+      ["Nothing grew here.", "Add a memory and", "I’ll plant it 🎋"],
+      ["This day’s bare.", "Anything you recall", "from back then?"]
+    ];
+    const r = Math.round(s.items.reduce((a,x) => a + x.feel, 0) / s.items.length);
+    if (r >= 4) return [
+      ["Looks like a bright", `${when} 🤩 What was`, "your favorite part?"],
+      ["Your bamboo’s", "glowing ✨ What", "made it so good?"],
+      ["Happy strings!", "Which moment", "would you replay?"]
+    ];
+    if (r === 3) return [
+      [`A steady ${when} 🙂`, "Anything small", "you enjoyed?"],
+      ["Solid practice.", "One thing that", "clicked today?"],
+      ["Nice and even.", "What do you want", "to try next?"]
+    ];
+    return [
+      [`A tough ${when}.`, "What’s one thing", "that still felt okay?"],
+      ["Rough strings", "happen 🐼 You still", "showed up, though."],
+      ["Hard day. Be kind", "to yourself —", "what’s one win?"]
+    ];
+  }
+  let pandaMsg = 0;
+  function pandaLine(d) {
+    const opts = pandaLines(d);
+    return opts[pandaMsg % opts.length];
+  }
+
+  function renderGrove() {
+    const svg = $("grove"); svg.innerHTML = "";
+    const COLS = 7, ROWS = 5, TW = 32, TH = 16, DEPTH = 16;
+    const ox = ROWS*TW + 40, oy = 120;
+    const pt = (c, r) => [ox + (c - r)*TW, oy + (c + r)*TH];
+    const L = pt(0, ROWS), B = pt(COLS, ROWS), R = pt(COLS, 0);
+    el("path", {d:`M${L[0]} ${L[1]} L${B[0]} ${B[1]} L${B[0]} ${B[1]+DEPTH} L${L[0]} ${L[1]+DEPTH} Z`, fill:"var(--soil)"}, svg);
+    el("path", {d:`M${B[0]} ${B[1]} L${R[0]} ${R[1]} L${R[0]} ${R[1]+DEPTH} L${B[0]} ${B[1]+DEPTH} Z`, fill:"var(--soil2)"}, svg);
+
+    const mk = selected.slice(0,7);
+    const layout = layoutMonth(mk);
+    const byTile = new Map(); layout.forEach((k, d) => byTile.set(k, d));
+
+    const title = el("text", {x:16, y:28, "font-size":"18", "font-weight":"700", fill:"var(--ink)"}, svg);
+    title.textContent = parse(mk + "-01").toLocaleDateString("en-US",{month:"long", year:"numeric"});
+    const sub = el("text", {x:16, y:46, "font-size":"12", fill:"var(--ink-soft)"}, svg);
+    sub.textContent = layout.size === 1 ? "1 day planted" : `${layout.size} days planted`;
+
+    const tiles = [];
+    for (let k = 0; k < TILES; k++) tiles.push({k, c:k % COLS, r:Math.floor(k / COLS)});
+    tiles.sort((a, b) => (a.c + a.r) - (b.c + b.r) || a.r - b.r); // back to front
+
+    const SPOTS = [[0,0],[-11,-4],[11,-4],[-7,5],[8,5]];
+    let order = 0;
+    tiles.forEach(({k, c, r}) => {
+      const [x, y] = pt(c, r); const cy = y + TH;
+      const d = byTile.get(k);
+      const s = d ? dayStats(d) : null;
+      const g = el("g", s ? {class:"stalk", tabindex:"0", role:"button",
+        "aria-label": `${pretty(d)}: ${s.items.length} bullets, ${s.mins} minutes`} : {}, svg);
+      el("path", {class:"hit", d:`M${x} ${y} L${x+TW} ${cy} L${x} ${y+2*TH} L${x-TW} ${cy} Z`,
+        fill: (c + r) % 2 ? "var(--grass)" : "var(--grass2)",
+        stroke: "var(--grass-line)", "stroke-width": 1}, g);
+      if (!s) return;
+      // soil mound the bamboo grows out of
+      el("ellipse", {cx:x, cy:cy+3, rx:16, ry:7, fill:"var(--soil2)"}, g);
+      el("ellipse", {cx:x, cy:cy+2, rx:14.5, ry:5.8, fill:"var(--soil)"}, g);
+      el("ellipse", {cx:x-3, cy:cy+.5, rx:8, ry:2.6, fill:"#fff", opacity:.12}, g);
+      [[-15,2],[13,4],[-6,8],[9,-2]].forEach(([dx,dy]) => el("path", {d:`M${x+dx} ${cy+dy+2} l -1.5 -4 M${x+dx} ${cy+dy+2} l .4 -5 M${x+dx} ${cy+dy+2} l 2 -3.5`, stroke:"var(--leaf)", "stroke-width":1, "stroke-linecap":"round", fill:"none"}, g));
+      el("title", {}, g).textContent = `${parse(d).toLocaleDateString("en-US",{month:"short",day:"numeric"})}: ${s.items.length} bullet${s.items.length>1?"s":""}, ${s.mins} min`;
+      const plant = el("g", {class: firstGrow ? "grow" : "", style:`animation-delay:${(order++)*40}ms`}, g);
+      const stalks = s.items.slice(0, 5).map((it, j) => ({it, j, sp:SPOTS[j]})).sort((a, b) => a.sp[1] - b.sp[1]);
+      stalks.forEach(({it, j, sp}) => {
+        const bx = x + sp[0], by = cy + sp[1] + 2;
+        const h = 18 + Math.min(Math.max(s.mins, 10), 120) / 120 * 54 - j*3;
+        const top = by - h;
+        const rnd = n => (hashStr(d + "|" + j + "|" + n) % 1000) / 1000;
+        const lean = (rnd(0) - .5) * 9;
+        // shadow on the ground, then the stalk leaning slightly from its base
+        el("ellipse", {cx:bx+4, cy:by+.5, rx:5, ry:1.5, fill:"#000", opacity:.18}, plant);
+        const st = el("g", {transform:`rotate(${lean.toFixed(1)} ${bx} ${by})`}, plant);
+        const wB = 2.7, wT = 1.5, wAt = yy => wT + (wB - wT) * (yy - top) / h;
+        el("path", {d:`M${bx-wB} ${by+1} L${bx-wT} ${top+3} Q${bx} ${top-1} ${bx+wT} ${top+3} L${bx+wB} ${by+1} Z`, fill:"var(--bamboo)"}, st);
+        el("path", {d:`M${bx-wB} ${by+1} L${bx-wB+.3} ${by-6} L${bx+wB-.3} ${by-6} L${bx+wB} ${by+1} Z`, fill:"var(--bamboo-node)", opacity:.55}, st);
+        el("line", {x1:bx-wB*.45, y1:by-1, x2:bx-wT*.45, y2:top+4, stroke:"#fff", "stroke-width":.8, opacity:.28}, st);
+        const nodes = [];
+        for (let ny = by - 9; ny > top + 5; ny -= 9 + j % 2) {
+          nodes.push(ny); const w = wAt(ny) + .5;
+          el("line", {x1:bx-w, y1:ny, x2:bx+w, y2:ny, stroke:"var(--bamboo-node)", "stroke-width":1.3, "stroke-linecap":"round"}, st);
+        }
+        // leafy twigs on the upper nodes
+        nodes.filter(ny => ny < by - h*.45).slice(-3).forEach((ny, q) => {
+          const side = (q + j) % 2 ? 1 : -1, tx = bx + side*5, ty = ny - 3;
+          el("line", {x1:bx + side*wAt(ny), y1:ny, x2:tx, y2:ty, stroke:"var(--bamboo-node)", "stroke-width":.8}, st);
+          el("path", {d:`M${tx} ${ty} q ${side*4} -2.5 ${side*10} 2 q ${-side*5} .5 ${-side*10} -2 z`, fill:feelVar(it.feel)}, st);
+          el("path", {d:`M${tx} ${ty} q ${side*3} .5 ${side*7} 6 q ${-side*4.5} -2 ${-side*7} -6 z`, fill:feelVar(it.feel)}, st);
+        });
+        // fresh leaves at the tip
+        el("path", {d:`M${bx} ${top+2} q -2 -5 -1 -10 q 2.5 4 1 10 z`, fill:feelVar(it.feel)}, st);
+        el("path", {d:`M${bx} ${top+4} q 5 -4 10 -2 q -5 4 -10 2 z`, fill:feelVar(it.feel)}, st);
+        el("path", {d:`M${bx} ${top+5} q -5 -3 -9 0 q 5 3 9 0 z`, fill:feelVar(it.feel)}, st);
+        if (it.feel === 5) {
+          const fx = bx + 6, fy = top + 1;
+          for (let p = 0; p < 5; p++) { const a = p*72*Math.PI/180; el("circle", {cx:fx + Math.cos(a)*2.6, cy:fy + Math.sin(a)*2.6, r:2, fill:"var(--f5)"}, st); }
+          el("circle", {cx:fx, cy:fy, r:1.2, fill:"#fff"}, st);
+        }
+        // soil lip in front of the base, so the stalk comes out of the ground
+        el("ellipse", {cx:bx, cy:by+1.2, rx:wB+1.6, ry:1.6, fill:"var(--soil)"}, plant);
+      });
+      g.addEventListener("click", () => go(d));
+      g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(d); } });
+    });
+
+    // panda resting on the ground beside the plot
+    const pk = .55, px = 92, py = 320;
+    const p = el("g", {"aria-hidden":"true"}, svg);
+    el("ellipse", {cx:px, cy:py, rx:18, ry:4, fill:"#000", opacity:.15}, p);
+    const body = el("g", {transform:`translate(${px - 32*pk} ${py - 92*pk}) scale(${pk})`}, p);
+    const anim = el("g", {id:"gardenPanda"}, body);
+    anim.innerHTML = `<g class="breath">${PANDA_BODY + PANDA_HEAD}</g>`;
+
+    // speech bubble: the panda asks about the selected day's mood, reacting to what's written
+    const lines = pandaLine(selected);
+    const lh = 15, padX = 11, padY = 9, fs = 12.5;
+    const bw = Math.max(...lines.map(t => t.length)) * 6.4 + padX*2;
+    const bh = lines.length * lh + padY*2 - 3;
+    const bx = px + 24, by = 252 - bh;
+    const bub = el("g", {id:"pandaBubble", "aria-hidden":"true"}, svg);
+    el("path", {d:`M${px+4} ${py-60} L${bx+12} ${by+bh} L${bx+30} ${by+bh} Z`, fill:"var(--page)", stroke:"var(--rule)", "stroke-width":1.2}, bub);
+    el("rect", {x:bx, y:by, width:bw, height:bh, rx:13, fill:"var(--page)", stroke:"var(--rule)", "stroke-width":1.2}, bub);
+    el("rect", {x:bx+12, y:by+bh-2, width:18, height:4, fill:"var(--page)"}, bub);
+    lines.forEach((t, k) => {
+      const tn = el("text", {x:bx+padX, y:by+padY+fs-2+k*lh, "font-size":fs, "font-family":"var(--hand)", fill:"var(--ink)"}, bub);
+      tn.textContent = t;
+    });
+    firstGrow = false;
+  }
+
+  // ---------- stats ----------
+  function renderStats() {
+    const t = todayISO();
+    let streak = 0, d = t;
+    if (!dayStats(d)) d = addDays(d, -1); // today not written yet doesn't break the streak
+    while (dayStats(d)) { streak++; d = addDays(d,-1); }
+    let mins30 = 0, days30 = 0, feelSum = 0, feelN = 0;
+    for (let i = 0; i < 30; i++) {
+      const s = dayStats(addDays(t, -i));
+      if (s) { days30++; mins30 += s.mins; s.items.forEach(x => { feelSum += x.feel; feelN++; }); }
+    }
+    const hrs = mins30 >= 60 ? `${Math.floor(mins30/60)}h ${mins30%60}m` : `${mins30}m`;
+    const avg = feelN ? FEELS[Math.round(feelSum/feelN)-1] : null;
+    const data = [
+      [streak + (streak === 1 ? " day" : " days"), "Current streak"],
+      [hrs, "Played in 30 days"],
+      [days30 + " / 30", "Days with bullets"],
+      [avg ? avg.e + " " + avg.l : "—", "Average feeling"]
+    ];
+    $("stats").innerHTML = "";
+    data.forEach(([v, l]) => {
+      const div = document.createElement("div"); div.className = "stat";
+      const b = document.createElement("b"); b.textContent = v;
+      const sp = document.createElement("span"); sp.textContent = l;
+      div.append(b, sp); $("stats").appendChild(div);
+    });
+  }
+
+  // ---------- calendar ----------
+  function renderCal() {
+    const cal = $("cal"); cal.innerHTML = "";
+    const t = todayISO(), td = parse(t);
+    const start = new Date(td); start.setDate(td.getDate() - td.getDay() - 7*15); // Sunday 15 weeks back
+    for (let i = 0; i < 16*7; i++) {
+      const d = new Date(start); d.setDate(start.getDate()+i);
+      const ds = iso(d), s = dayStats(ds);
+      const b = document.createElement("button");
+      b.className = "cell" + (ds > t ? " future" : "") + (ds === selected ? " sel" : "");
+      if (s) {
+        b.style.background = feelVar(Math.round(s.avg));
+        b.style.opacity = Math.min(1, .55 + s.mins/120);
+      }
+      b.title = s ? `${ds}: ${s.items.length} bullet${s.items.length>1?"s":""}, ${s.mins} min` : ds;
+      b.setAttribute("aria-label", b.title);
+      if (ds > t) b.disabled = true; else b.onclick = () => go(ds);
+      cal.appendChild(b);
+    }
+    $("legend").innerHTML = FEELS.map(f => `<span><i style="background:${feelVar(f.v)}"></i>${f.l}</span>`).join("");
+  }
+
+  // ---------- focus mix ----------
+  function renderMix() {
+    const counts = {};
+    TAGS.forEach(t => counts[t] = [0,0,0,0,0]);
+    entries.forEach(e => e.items.forEach(it => { (counts[it.tag] || counts.Other)[it.feel-1]++; }));
+    const max = Math.max(1, ...TAGS.map(t => counts[t].reduce((a,b)=>a+b,0)));
+    $("mix").innerHTML = "";
+    TAGS.forEach(t => {
+      const total = counts[t].reduce((a,b)=>a+b,0);
+      const row = document.createElement("div"); row.className = "mixrow";
+      const name = document.createElement("span"); name.textContent = t;
+      const bar = document.createElement("div"); bar.className = "bar";
+      counts[t].forEach((c, k) => { if (c) { const s = document.createElement("span"); s.style.width = (c/max*100) + "%"; s.style.background = feelVar(k+1); bar.appendChild(s); } });
+      const n = document.createElement("span"); n.className = "n"; n.textContent = total;
+      row.append(name, bar, n); $("mix").appendChild(row);
+    });
+  }
+
+  // ---------- bright spots ----------
+  function renderBright() {
+    const all = [];
+    entries.forEach(e => e.items.forEach(it => { if (it.feel >= 4) all.push({...it, date:e.date}); }));
+    all.sort((a,b) => b.date.localeCompare(a.date) || b.feel - a.feel);
+    const ul = $("bright"); ul.innerHTML = "";
+    if (!all.length) {
+      const li = document.createElement("li"); li.style.borderLeftColor = "var(--rule)";
+      li.textContent = "Mark a bullet as Good or Glowing and it’ll show up here, photos and all.";
+      ul.appendChild(li); return;
+    }
+    all.slice(0, 8).forEach(it => {
+      const li = document.createElement("li");
+      if (it.feel === 4) li.style.borderLeftColor = "var(--f4)";
+      const q = document.createElement("q"); q.textContent = it.text;
+      const sm = document.createElement("small");
+      sm.textContent = `${FEELS[it.feel-1].e} ${parse(it.date).toLocaleDateString("en-US",{month:"short",day:"numeric"})}, ${it.tag}${it.mins ? `, ${it.mins} min` : ""}`;
+      li.append(q, sm);
+      if (it.media && it.media.length) {
+        const grid = document.createElement("div"); grid.className = "moment-media";
+        it.media.forEach(m => grid.appendChild(mediaButton(m)));
+        li.appendChild(grid);
+      }
+      ul.appendChild(li);
+    });
+  }
+
+  function render() { renderJournal(); renderGrove(); renderStats(); renderCal(); renderMix(); renderBright(); }
+
+  // change the panda's words every minute
+  setInterval(() => { pandaMsg++; renderGrove(); }, 60000);
+
+  buildControls();
+  setupMusic();
+
+  // ---------- sign in ----------
+  $("loginPanda").innerHTML = PANDA_HEAD;
+  function showLogin(msg) {
+    uid = null; entries.clear(); signed.clear();
+    $("app").hidden = true; $("login").hidden = false;
+    $("loginMsg").textContent = msg || "";
+  }
+  function startApp(session) {
+    uid = session.user.id;
+    $("login").hidden = true; $("app").hidden = false; $("attachRow").hidden = false;
+    render(); store.load();
+  }
+  $("loginForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const b = $("loginBtn"); b.disabled = true; b.textContent = "Signing in…";
+    const { data, error } = await sb.auth.signInWithPassword({ email: $("loginEmail").value.trim(), password: $("loginPass").value });
+    b.disabled = false; b.textContent = "Sign in";
+    if (error) { $("loginMsg").textContent = error.message; return; }
+    $("loginPass").value = "";
+    startApp(data.session);
+  });
+  $("signOut").onclick = async () => { await sb.auth.signOut(); showLogin(); };
+
+  (async () => {
+    if (!sb) { showLogin("Add your Supabase URL and key to config.js, then reload."); $("loginBtn").disabled = true; return; }
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) startApp(session); else showLogin();
+    sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") showLogin(); });
+  })();
+
+  // ---------- background music ----------
+  function setupMusic() {
+    let actx = null, master = null, playing = false, mode = "calm", vol = 0.4;
+    let padTimer = null, padNodes = [], padFilter = null, lfo = null;
+    let fileAudio = null, fileURL = null, fileName = "";
+    const btn = $("musicBtn"), moreBtn = $("musicMore"), panel = $("ppanel"), note = $("musicNote");
+
+    // --- tiny IndexedDB so a chosen track survives reloads (per browser) ---
+    const idb = {
+      db: null,
+      open() {
+        return new Promise(res => {
+          try {
+            const r = indexedDB.open("panda-music", 1);
+            r.onupgradeneeded = () => r.result.createObjectStore("kv");
+            r.onsuccess = () => { this.db = r.result; res(this.db); };
+            r.onerror = () => res(null);
+          } catch (e) { res(null); }
+        });
+      },
+      async put(k, v) { const db = this.db || await this.open(); if (!db) return;
+        try { db.transaction("kv", "readwrite").objectStore("kv").put(v, k); } catch (e) {} },
+      async get(k) { const db = this.db || await this.open(); if (!db) return null;
+        return new Promise(res => { try { const rq = db.transaction("kv").objectStore("kv").get(k); rq.onsuccess = () => res(rq.result || null); rq.onerror = () => res(null); } catch (e) { res(null); } }); }
+    };
+
+    const ensureCtx = () => {
+      if (!actx) {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        master = actx.createGain(); master.gain.value = vol; master.connect(actx.destination);
+      }
+      if (actx.state === "suspended") actx.resume();
+    };
+
+    // --- generative soothing pad: slow major-key chords through a soft lowpass ---
+    const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+    const CHORDS = [[48,55,64,67], [45,52,60,64], [53,60,64,69], [43,50,59,62]]; // I vi IV V, gentle
+    function startPad() {
+      ensureCtx();
+      padFilter = actx.createBiquadFilter(); padFilter.type = "lowpass";
+      padFilter.frequency.value = 850; padFilter.Q.value = 0.4; padFilter.connect(master);
+      // slow breathing on the filter
+      lfo = actx.createOscillator(); const lg = actx.createGain();
+      lfo.frequency.value = 0.07; lg.gain.value = 220;
+      lfo.connect(lg); lg.connect(padFilter.frequency); lfo.start();
+      let ci = 0;
+      const playChord = () => {
+        const now = actx.currentTime;
+        padNodes.forEach(n => { n.g.gain.cancelScheduledValues(now); n.g.gain.setTargetAtTime(0, now, 1.4);
+          setTimeout(() => { try { n.o.stop(); } catch (e) {} }, 3500); });
+        padNodes = [];
+        CHORDS[ci % CHORDS.length].forEach((m, i) => {
+          [0, 1].forEach(dt => { // two slightly detuned oscillators per note for warmth
+            const o = actx.createOscillator(); o.type = "sine";
+            o.frequency.value = mtof(m); o.detune.value = dt ? 6 : -6;
+            const g = actx.createGain(); g.gain.value = 0;
+            o.connect(g); g.connect(padFilter); o.start();
+            g.gain.setTargetAtTime(0.11 / (1 + i * 0.4), now, 1.6);
+            padNodes.push({ o, g });
+          });
+        });
+        ci++;
+      };
+      playChord(); padTimer = setInterval(playChord, 8500);
+    }
+    function stopPad() {
+      if (padTimer) clearInterval(padTimer), padTimer = null;
+      const now = actx ? actx.currentTime : 0;
+      padNodes.forEach(n => { try { n.g.gain.setTargetAtTime(0, now, 0.4); setTimeout(() => { try { n.o.stop(); } catch (e) {} }, 1200); } catch (e) {} });
+      padNodes = [];
+      if (lfo) { try { lfo.stop(); } catch (e) {} lfo = null; }
+    }
+
+    function startFile() {
+      if (!fileURL) { setMode("calm"); note.textContent = "Pick a file first — playing the built-in tune."; return start(); }
+      ensureCtx();
+      if (!fileAudio) { fileAudio = new Audio(); fileAudio.loop = true; }
+      fileAudio.src = fileURL; fileAudio.volume = vol;
+      fileAudio.play().catch(() => { note.textContent = "Couldn’t play that file."; });
+    }
+    function stopFile() { if (fileAudio) fileAudio.pause(); }
+
+    function start() { playing = true; btn.textContent = "⏸"; btn.classList.add("on"); btn.setAttribute("aria-pressed", "true");
+      if (mode === "file") startFile(); else startPad(); }
+    function stop() { playing = false; btn.textContent = "▶"; btn.classList.remove("on"); btn.setAttribute("aria-pressed", "false");
+      stopPad(); stopFile(); }
+
+    function setMode(m) {
+      mode = m;
+      $("srcCalm").classList.toggle("on", m === "calm");
+      $("srcMine").classList.toggle("on", m === "file");
+      note.textContent = m === "file" ? (fileName ? "Playing: " + fileName : "No file chosen yet.") : "Built-in soothing tune.";
+      if (playing) { stopPad(); stopFile(); if (m === "file") startFile(); else startPad(); }
+    }
+
+    btn.onclick = () => { ensureCtx(); playing ? stop() : start(); };
+    moreBtn.onclick = () => { const open = panel.hidden; panel.hidden = !open; moreBtn.setAttribute("aria-expanded", String(open)); };
+    $("srcCalm").onclick = () => setMode("calm");
+    $("srcMine").onclick = () => setMode("file");
+    $("vol").oninput = e => { vol = e.target.value / 100; if (master) master.gain.setTargetAtTime(vol, actx.currentTime, 0.05); if (fileAudio) fileAudio.volume = vol; };
+    $("pickMusic").onclick = () => $("musicFile").click();
+    $("musicFile").onchange = e => {
+      const f = e.target.files[0]; e.target.value = "";
+      if (!f) return;
+      if (fileURL) URL.revokeObjectURL(fileURL);
+      fileURL = URL.createObjectURL(f); fileName = f.name;
+      idb.put("track", f); idb.put("trackName", f.name);
+      setMode("file"); if (!playing) start(); else startFile();
+    };
+
+    // restore a previously chosen track
+    (async () => {
+      const blob = await idb.get("track");
+      if (blob) { fileURL = URL.createObjectURL(blob); fileName = await idb.get("trackName") || "your track"; }
+    })();
+  }
+})();
+</script>
+</body>
+</html>
