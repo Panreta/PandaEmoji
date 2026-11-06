@@ -666,9 +666,9 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   function pandaLines(d) {
     const s = dayStats(d), isToday = d === todayISO(), when = isToday ? "today" : "that day";
     if (!s) return isToday ? [
-      ["Can I have", "your SSN?", "bullet for me 🎋"],
+      ["Can I have", "your experience?", "bullet for me 🎋"],
       ["Psst… what did", "you play today? 🎸", "Plant it here."],
-      ["I need to eat", "ur passport ID", "to grow up! 🐾"],
+      ["I need to eat", "bamboo and 鱼香肉丝", "to grow up! 🐾"],
       ["The garden’s", "waiting. What", "happened today?"]
     ] : [
       ["Nothing grew here.", "Add a memory and", "I’ll plant it 🎋"],
@@ -678,7 +678,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     if (r >= 4) return [
       ["Looks like a bright", `${when} 🤩 What was`, "your favorite part?"],
       ["Your bamboo’s", "glowing ✨ What", "made it so good?"],
-      ["Give Passport ID!", "Which moment", "would you replay?"]
+      ["Bless you!", "Which moment", "would you replay?"]
     ];
     if (r === 3) return [
       [`A steady ${when} 🙂`, "Anything small", "you enjoyed?"],
