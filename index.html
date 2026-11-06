@@ -61,8 +61,11 @@ h1{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;letter-spacing:-.02em;marg
 .journal{background:var(--page);border-radius:4px 18px 18px 4px;padding:22px 22px 26px 34px;position:relative;
   box-shadow:0 1px 0 var(--rule), -6px 0 0 var(--ink) inset;}
 .datebar{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.datebar h2{font-size:1.35rem;margin:0;font-weight:600;flex:1;min-width:0}
-.datebar h2 small{display:block;color:var(--ink-soft);font-weight:400;font-size:.85rem}
+.datepick{display:flex;gap:10px;align-items:center;flex:1;min-width:0;flex-wrap:wrap}
+.paper{position:relative;padding:20px 18px 16px;margin:10px 4px 0;background:transparent;transform:rotate(-.5deg);transform-origin:center}
+.paper::before{content:"";position:absolute;inset:-5px;z-index:-1;background:var(--page);border:1.5px solid var(--rule);border-radius:4px;box-shadow:0 3px 14px rgba(0,0,0,.08);filter:url(#torn)}
+.paper h2{font-size:1.35rem;margin:0 0 2px;font-weight:600}
+.paper h2 small{display:block;color:var(--ink-soft);font-weight:400;font-size:.85rem}
 .icon-btn{width:36px;height:36px;border-radius:50%;border:1.5px solid var(--rule);background:transparent;cursor:pointer;display:grid;place-items:center;font-size:1.1rem}
 .icon-btn:hover{border-color:var(--ink)}
 .today-btn{border:none;background:none;color:var(--bamboo);font-weight:600;cursor:pointer;padding:4px 6px}
@@ -191,19 +194,24 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 #gardenPanda{transform-box:fill-box;transform-origin:bottom center;animation:sway 4s ease-in-out infinite}
 #gardenPanda .breath{transform-box:fill-box;transform-origin:center;animation:breathe 3.2s ease-in-out infinite}
 #pandaBubble{animation:bubblein .4s ease both}
+@keyframes tearaway{0%{opacity:1;transform:translate(0,0) rotate(-.5deg)}20%{transform:translate(8px,-12px) rotate(-6deg)}45%{transform:translate(-6px,34px) rotate(7deg)}70%{opacity:.85;transform:translate(14px,86px) rotate(-9deg)}100%{opacity:0;transform:translate(var(--tx,40px),185px) rotate(var(--rot,16deg))}}
+.tearaway{animation:tearaway 1.8s cubic-bezier(.3,.55,.4,1) forwards;transform-origin:center}
+@keyframes settle{0%{opacity:0;transform:translateY(-10px) rotate(.6deg)}60%{opacity:1}100%{opacity:1;transform:translateY(0) rotate(-.5deg)}}
+.settle{animation:settle .8s ease both}
 @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 .grow{transform-box:fill-box;transform-origin:bottom;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
-@media (prefers-reduced-motion: reduce){.grow{animation:none}#gardenPanda,#gardenPanda .breath,#pandaBubble{animation:none}}
+@media (prefers-reduced-motion: reduce){.tearaway{display:none}.settle{animation:none}#gardenPanda,#gardenPanda .breath,#pandaBubble{animation:none}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 </head>
 <body>
+<svg width="0" height="0" aria-hidden="true" style="position:absolute"><filter id="torn" x="-20%" y="-20%" width="140%" height="140%"><feTurbulence type="fractalNoise" baseFrequency="0.013 0.016" numOctaves="2" seed="7" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="10" xChannelSelector="R" yChannelSelector="G"/></filter></svg>
 <section class="login" id="login" hidden>
   <div class="login-card">
     <svg width="84" height="84" viewBox="0 4 64 60" aria-hidden="true" id="loginPanda"></svg>
     <h1>Panda Emoji</h1>
-        <p class="sub" id="loginSub">Sign in to open your 手帐.</p>
+    <p class="sub" id="loginSub">Sign in to open your 手帐.</p>
     <div class="authtabs" role="group" aria-label="Sign in or create account">
       <button type="button" id="tabSignin" class="on">Sign in</button>
       <button type="button" id="tabSignup">Create account</button>
@@ -241,15 +249,17 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     <section class="journal" aria-label="Journal page">
       <div class="datebar">
         <button class="icon-btn" id="prev" aria-label="Previous day">‹</button>
-        <h2 id="dateTitle"></h2>
+        <div class="datepick">
+          <input type="date" id="datePick" aria-label="Pick a date">
+          <button class="today-btn" id="todayBtn">Go to today</button>
+        </div>
         <button class="icon-btn" id="next" aria-label="Next day">›</button>
       </div>
-      <div class="datebar" style="gap:10px">
-        <input type="date" id="datePick" aria-label="Pick a date">
-        <button class="today-btn" id="todayBtn">Go to today</button>
-      </div>
 
-      <ul class="lines" id="bullets"></ul>
+      <div class="paper" id="paper">
+        <h2 id="dateTitle"></h2>
+        <ul class="lines" id="bullets"></ul>
+      </div>
 
       <form id="form" autocomplete="off">
         <input class="write" id="text" maxlength="240" placeholder="What happened at practice?" aria-label="Bullet text">
@@ -468,6 +478,22 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 
   function renderJournal() {
     const t = todayISO();
+    // tear the old page off and let it flutter away, then settle the new one in
+    if (navDir) {
+      const paper = $("paper"), host = paper.offsetParent || paper.parentElement;
+      const ghost = paper.cloneNode(true);
+      ghost.removeAttribute("id");
+      ghost.querySelectorAll("[id]").forEach(e => e.removeAttribute("id"));
+      ghost.classList.add("tearaway");
+      ghost.style.cssText += `position:absolute;left:${paper.offsetLeft}px;top:${paper.offsetTop}px;width:${paper.offsetWidth}px;margin:0;z-index:6;pointer-events:none`;
+      ghost.style.setProperty("--tx", navDir === "next" ? "52px" : "-52px");
+      ghost.style.setProperty("--rot", navDir === "next" ? "15deg" : "-15deg");
+      host.appendChild(ghost);
+      const drop = () => ghost.remove();
+      ghost.addEventListener("animationend", drop); setTimeout(drop, 2200);
+      paper.classList.remove("settle"); void paper.offsetWidth; paper.classList.add("settle");
+      navDir = null;
+    }
     $("dateTitle").innerHTML = "";
     const h = document.createElement("span"); h.textContent = pretty(selected);
     const sm = document.createElement("small");
@@ -631,7 +657,11 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   $("next").onclick = () => { if (selected < todayISO()) go(addDays(selected,1)); };
   $("todayBtn").onclick = () => go(todayISO());
   $("datePick").onchange = e => { if (e.target.value && e.target.value <= todayISO()) go(e.target.value); };
-  function go(d) { selected = d; resetForm(); render(); }
+  let navDir = null; // "next" | "prev" | null, for the day-change animation
+  function go(d) {
+    navDir = d > selected ? "next" : d < selected ? "prev" : null;
+    selected = d; resetForm(); render();
+  }
 
   // ---------- helpers ----------
   const dayStats = d => {
@@ -785,8 +815,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     const p = el("g", {"aria-hidden":"true"}, svg);
     el("ellipse", {cx:px, cy:py, rx:18, ry:4, fill:"#000", opacity:.15}, p);
     const body = el("g", {transform:`translate(${px - 32*pk} ${py - 92*pk}) scale(${pk})`}, p);
-
-        const anim = el("g", {id:"gardenPanda", style:"cursor:pointer"}, body);
+    const anim = el("g", {id:"gardenPanda", style:"cursor:pointer"}, body);
     anim.innerHTML = `<g class="breath">${PANDA_BODY + PANDA_HEAD}</g>`;
     // tapping the panda hides or shows its speech bubble
     p.setAttribute("tabindex", "0"); p.setAttribute("role", "button");
@@ -820,8 +849,8 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); onClick(); } });
         return g;
       };
-      mkBtn(bx + bw - 34, "Show another note", "\u21BB", () => { pandaMsg++; renderGrove(); });
-      mkBtn(bx + bw - 15, "Close the note", "\u2715", () => { bubbleOpen = false; renderGrove(); });
+      mkBtn(bx + bw - 34, "Show another note", "↻", () => { pandaMsg++; renderGrove(); });
+      mkBtn(bx + bw - 15, "Close the note", "✕", () => { bubbleOpen = false; renderGrove(); });
     }
     firstGrow = false;
   }
@@ -924,7 +953,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   function render() { renderJournal(); renderGrove(); renderStats(); renderCal(); renderMix(); renderBright(); }
 
   // change the panda's words every minute
-    setInterval(() => { if (bubbleOpen) { pandaMsg++; renderGrove(); } }, 60000);
+  setInterval(() => { if (bubbleOpen) { pandaMsg++; renderGrove(); } }, 60000);
 
   buildControls();
   setupMusic();
@@ -941,8 +970,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     $("login").hidden = true; $("app").hidden = false; $("attachRow").hidden = false;
     render(); store.load();
   }
-  
-    let authMode = "signin";
+  let authMode = "signin";
   const setMsg = (t, ok) => { const m = $("loginMsg"); m.textContent = t || ""; m.classList.toggle("ok", !!ok); };
   function setMode(m) {
     authMode = m; setMsg("");
@@ -981,6 +1009,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     setMsg(error ? error.message : "If that account exists, a reset link is on its way to your email.", !error);
   };
 
+  // when the user returns via the reset link, let them set a new password
   function showReset() {
     $("login").hidden = false; $("app").hidden = true;
     $("loginForm").hidden = true; $("resetForm").hidden = false;
@@ -1011,7 +1040,6 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     const { data: { session } } = await sb.auth.getSession();
     if (session) startApp(session); else showLogin();
   })();
-  
 
   // ---------- background music ----------
   function setupMusic() {
