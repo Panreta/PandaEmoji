@@ -187,6 +187,12 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 .ppanel .pick{border:1.5px dashed var(--rule);background:transparent;border-radius:10px;padding:7px;cursor:pointer;font-size:.82rem;color:var(--ink-soft)}
 .ppanel .pick:hover{border-color:var(--ink);color:var(--ink)}
 .ppanel .pnote{margin:0;font-size:.76rem;color:var(--ink-soft)}
+.tracklist{max-height:150px;overflow:auto;display:grid;gap:4px;margin-bottom:8px}
+.trackrow{display:flex;align-items:center;gap:6px;border:1.5px solid var(--rule);background:transparent;border-radius:9px;padding:6px 8px;cursor:pointer;font-size:.82rem;text-align:left;color:var(--ink)}
+.trackrow.on{border-color:var(--bamboo);background:var(--mist)}
+.trackrow .tname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trackrow .tdel{border:none;background:none;color:var(--ink-soft);cursor:pointer;font-size:.8rem;padding:0 2px}
+.trackempty{font-size:.78rem;color:var(--ink-soft);padding:4px 2px}
 @keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
 @keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(1.04)}}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
@@ -326,12 +332,18 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   <div class="ppanel" id="ppanel" hidden>
     <div class="seg" role="group" aria-label="Music source">
       <button id="srcCalm" class="on" type="button">Soothing</button>
-      <button id="srcMine" type="button">My music</button>
+      <button id="srcLib" type="button">Library</button>
+      <button id="srcMine" type="button">My file</button>
+    </div>
+    <div id="libBox" hidden>
+      <div class="tracklist" id="trackList"></div>
+      <button class="pick" id="uploadMusic" type="button">Upload music…</button>
+      <input type="file" id="libFile" accept="audio/*" multiple hidden>
     </div>
     <label>Volume
       <input type="range" id="vol" min="0" max="100" value="40" aria-label="Music volume">
     </label>
-    <button class="pick" id="pickMusic" type="button">Choose an audio file…</button>
+    <button class="pick" id="pickMusic" type="button" hidden>Choose an audio file…</button>
     <input type="file" id="musicFile" accept="audio/*" hidden>
     <p class="pnote" id="musicNote">Built-in soothing tune.</p>
   </div>
@@ -1046,6 +1058,15 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     let actx = null, master = null, playing = false, mode = "calm", vol = 0.4;
     let padTimer = null, padNodes = [], padFilter = null, lfo = null;
     let fileAudio = null, fileURL = null, fileName = "";
+    const MUSIC_BUCKET = "music";
+    let library = [], libIndex = 0, libLoaded = false;
+    const ensureAudio = () => {
+      if (!fileAudio) {
+        fileAudio = new Audio();
+        fileAudio.addEventListener("ended", () => { if (mode === "lib" && playing) startLibrary(libIndex + 1); });
+      }
+      return fileAudio;
+    };
     const btn = $("musicBtn"), moreBtn = $("musicMore"), panel = $("ppanel"), note = $("musicNote");
 
     // --- tiny IndexedDB so a chosen track survives reloads (per browser) ---
@@ -1116,30 +1137,102 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 
     function startFile() {
       if (!fileURL) { setMode("calm"); note.textContent = "Pick a file first — playing the built-in tune."; return start(); }
-      ensureCtx();
-      if (!fileAudio) { fileAudio = new Audio(); fileAudio.loop = true; }
-      fileAudio.src = fileURL; fileAudio.volume = vol;
+      ensureCtx(); ensureAudio();
+      fileAudio.loop = true; fileAudio.src = fileURL; fileAudio.volume = vol;
       fileAudio.play().catch(() => { note.textContent = "Couldn’t play that file."; });
     }
     function stopFile() { if (fileAudio) fileAudio.pause(); }
 
+    // ---- shared music library (Supabase) ----
+    async function loadLibrary() {
+      libLoaded = true;
+      if (!sb) { renderTracks(); return; }
+      const { data, error } = await sb.from("tracks").select("id,title,path").order("created_at");
+      if (error) { note.textContent = "Couldn’t load the library."; return; }
+      library = data.map(t => ({ id: t.id, title: t.title, path: t.path,
+        url: sb.storage.from(MUSIC_BUCKET).getPublicUrl(t.path).data.publicUrl }));
+      if (libIndex >= library.length) libIndex = 0;
+      renderTracks();
+    }
+    function renderTracks() {
+      const box = $("trackList"); box.innerHTML = "";
+      if (!library.length) {
+        const d = document.createElement("div"); d.className = "trackempty";
+        d.textContent = "No tracks yet. Upload some below.";
+        box.appendChild(d); return;
+      }
+      library.forEach((tr, i) => {
+        const row = document.createElement("button"); row.type = "button";
+        row.className = "trackrow" + (mode === "lib" && i === libIndex && playing ? " on" : "");
+        const name = document.createElement("span"); name.className = "tname"; name.textContent = tr.title;
+        const del = document.createElement("span"); del.className = "tdel"; del.textContent = "✕"; del.title = "Remove";
+        del.onclick = ev => { ev.stopPropagation(); removeTrack(tr); };
+        row.append(name, del);
+        row.onclick = () => { mode = "lib"; playing = true;
+          btn.textContent = "⏸"; btn.classList.add("on"); btn.setAttribute("aria-pressed", "true");
+          ensureCtx(); stopPad(); startLibrary(i); };
+        box.appendChild(row);
+      });
+    }
+    function startLibrary(i) {
+      if (!library.length) { note.textContent = "Library is empty. Upload some music."; return; }
+      ensureCtx(); ensureAudio();
+      libIndex = ((i % library.length) + library.length) % library.length;
+      fileAudio.loop = false; fileAudio.src = library[libIndex].url; fileAudio.volume = vol;
+      fileAudio.play().catch(() => { note.textContent = "Couldn’t play that track."; });
+      note.textContent = "Playing: " + library[libIndex].title;
+      renderTracks();
+    }
+    async function removeTrack(tr) {
+      if (!sb) return;
+      await sb.storage.from(MUSIC_BUCKET).remove([tr.path]).catch(() => {});
+      await sb.from("tracks").delete().eq("id", tr.id).catch(() => {});
+      await loadLibrary();
+    }
+
     function start() { playing = true; btn.textContent = "⏸"; btn.classList.add("on"); btn.setAttribute("aria-pressed", "true");
-      if (mode === "file") startFile(); else startPad(); }
+      if (mode === "file") startFile(); else if (mode === "lib") startLibrary(libIndex); else startPad(); }
     function stop() { playing = false; btn.textContent = "▶"; btn.classList.remove("on"); btn.setAttribute("aria-pressed", "false");
       stopPad(); stopFile(); }
 
     function setMode(m) {
       mode = m;
       $("srcCalm").classList.toggle("on", m === "calm");
+      $("srcLib").classList.toggle("on", m === "lib");
       $("srcMine").classList.toggle("on", m === "file");
-      note.textContent = m === "file" ? (fileName ? "Playing: " + fileName : "No file chosen yet.") : "Built-in soothing tune.";
-      if (playing) { stopPad(); stopFile(); if (m === "file") startFile(); else startPad(); }
+      $("libBox").hidden = m !== "lib";
+      $("pickMusic").hidden = m !== "file";
+      note.textContent = m === "file" ? (fileName ? "Playing: " + fileName : "No file chosen yet.")
+                       : m === "lib" ? "Shared music library." : "Built-in soothing tune.";
+      if (m === "lib" && !libLoaded) loadLibrary();
+      if (playing) { stopPad(); stopFile();
+        if (m === "file") startFile(); else if (m === "lib") startLibrary(libIndex); else startPad(); }
     }
 
     btn.onclick = () => { ensureCtx(); playing ? stop() : start(); };
     moreBtn.onclick = () => { const open = panel.hidden; panel.hidden = !open; moreBtn.setAttribute("aria-expanded", String(open)); };
     $("srcCalm").onclick = () => setMode("calm");
+    $("srcLib").onclick = () => setMode("lib");
     $("srcMine").onclick = () => setMode("file");
+    $("uploadMusic").onclick = () => $("libFile").click();
+    $("libFile").onchange = async e => {
+      const files = [...e.target.files].filter(f => f.type.startsWith("audio") && f.size <= MAX_BYTES);
+      e.target.value = "";
+      if (!files.length) { note.textContent = "Pick audio files under 50 MB."; return; }
+      if (!sb) { note.textContent = "Sign in to upload to the library."; return; }
+      for (let k = 0; k < files.length; k++) {
+        note.textContent = `Uploading ${k + 1} of ${files.length}…`;
+        const f = files[k];
+        const ext = ((f.name.split(".").pop() || "").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8)) || "mp3";
+        const path = `${crypto.randomUUID()}.${ext}`;
+        const up = await sb.storage.from(MUSIC_BUCKET).upload(path, f, { contentType: f.type });
+        if (up.error) { note.textContent = "Upload failed: " + up.error.message; return; }
+        const ins = await sb.from("tracks").insert({ title: f.name.replace(/\.[^.]+$/, ""), path });
+        if (ins.error) { note.textContent = "Saved file but couldn’t list it: " + ins.error.message; }
+      }
+      note.textContent = `Added ${files.length} track${files.length > 1 ? "s" : ""}.`;
+      await loadLibrary();
+    };
     $("vol").oninput = e => { vol = e.target.value / 100; if (master) master.gain.setTargetAtTime(vol, actx.currentTime, 0.05); if (fileAudio) fileAudio.volume = vol; };
     $("pickMusic").onclick = () => $("musicFile").click();
     $("musicFile").onchange = e => {
