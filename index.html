@@ -691,7 +691,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       ["Hard day. Be kind", "to yourself —", "what’s one win?"]
     ];
   }
-  let pandaMsg = 0;
+  let pandaMsg = 0, bubbleOpen = true;
   function pandaLine(d) {
     const opts = pandaLines(d);
     return opts[pandaMsg % opts.length];
@@ -785,23 +785,44 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     const p = el("g", {"aria-hidden":"true"}, svg);
     el("ellipse", {cx:px, cy:py, rx:18, ry:4, fill:"#000", opacity:.15}, p);
     const body = el("g", {transform:`translate(${px - 32*pk} ${py - 92*pk}) scale(${pk})`}, p);
-    const anim = el("g", {id:"gardenPanda"}, body);
+
+        const anim = el("g", {id:"gardenPanda", style:"cursor:pointer"}, body);
     anim.innerHTML = `<g class="breath">${PANDA_BODY + PANDA_HEAD}</g>`;
+    // tapping the panda hides or shows its speech bubble
+    p.setAttribute("tabindex", "0"); p.setAttribute("role", "button");
+    p.setAttribute("aria-label", bubbleOpen ? "Hide the panda's note" : "Show the panda's note");
+    const toggleBubble = () => { bubbleOpen = !bubbleOpen; renderGrove(); };
+    p.addEventListener("click", toggleBubble);
+    p.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleBubble(); } });
 
     // speech bubble: the panda asks about the selected day's mood, reacting to what's written
-    const lines = pandaLine(selected);
-    const lh = 15, padX = 11, padY = 9, fs = 12.5;
-    const bw = Math.max(...lines.map(t => t.length)) * 6.4 + padX*2;
-    const bh = lines.length * lh + padY*2 - 3;
-    const bx = px + 24, by = 252 - bh;
-    const bub = el("g", {id:"pandaBubble", "aria-hidden":"true"}, svg);
-    el("path", {d:`M${px+4} ${py-60} L${bx+12} ${by+bh} L${bx+30} ${by+bh} Z`, fill:"var(--page)", stroke:"var(--rule)", "stroke-width":1.2}, bub);
-    el("rect", {x:bx, y:by, width:bw, height:bh, rx:13, fill:"var(--page)", stroke:"var(--rule)", "stroke-width":1.2}, bub);
-    el("rect", {x:bx+12, y:by+bh-2, width:18, height:4, fill:"var(--page)"}, bub);
-    lines.forEach((t, k) => {
-      const tn = el("text", {x:bx+padX, y:by+padY+fs-2+k*lh, "font-size":fs, "font-family":"var(--hand)", fill:"var(--ink)"}, bub);
-      tn.textContent = t;
-    });
+    if (bubbleOpen) {
+      const lines = pandaLine(selected);
+      const lh = 15, padX = 11, padY = 9, fs = 12.5, topPad = 16;
+      const bw = Math.max(70, Math.max(...lines.map(t => t.length)) * 6.4 + padX*2);
+      const bh = lines.length * lh + padY*2 - 3 + topPad;
+      const bx = px + 24, by = 248 - bh;
+      const bub = el("g", {id:"pandaBubble"}, svg);
+      el("path", {d:`M${px+4} ${py-60} L${bx+12} ${by+bh} L${bx+30} ${by+bh} Z`, fill:"var(--page)", stroke:"var(--rule)", "stroke-width":1.2}, bub);
+      el("rect", {x:bx, y:by, width:bw, height:bh, rx:13, fill:"var(--page)", stroke:"var(--rule)", "stroke-width":1.2}, bub);
+      el("rect", {x:bx+12, y:by+bh-2, width:18, height:4, fill:"var(--page)"}, bub);
+      lines.forEach((t, k) => {
+        const tn = el("text", {x:bx+padX, y:by+topPad+padY+fs-4+k*lh, "font-size":fs, "font-family":"var(--hand)", fill:"var(--ink)"}, bub);
+        tn.textContent = t;
+      });
+      // small controls in the bubble's top-right: update (next line) and close
+      const mkBtn = (cx, label, glyph, onClick) => {
+        const g = el("g", {class:"stalk", tabindex:"0", role:"button", "aria-label":label, style:"cursor:pointer"}, bub);
+        el("circle", {cx, cy:by+13, r:9, fill:"transparent"}, g);
+        const t = el("text", {x:cx, y:by+13, "text-anchor":"middle", "dominant-baseline":"central", "font-size":13, fill:"var(--ink-soft)"}, g);
+        t.textContent = glyph;
+        g.addEventListener("click", ev => { ev.stopPropagation(); onClick(); });
+        g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); onClick(); } });
+        return g;
+      };
+      mkBtn(bx + bw - 34, "Show another note", "\u21BB", () => { pandaMsg++; renderGrove(); });
+      mkBtn(bx + bw - 15, "Close the note", "\u2715", () => { bubbleOpen = false; renderGrove(); });
+    }
     firstGrow = false;
   }
 
@@ -903,7 +924,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   function render() { renderJournal(); renderGrove(); renderStats(); renderCal(); renderMix(); renderBright(); }
 
   // change the panda's words every minute
-  setInterval(() => { pandaMsg++; renderGrove(); }, 60000);
+    setInterval(() => { if (bubbleOpen) { pandaMsg++; renderGrove(); } }, 60000);
 
   buildControls();
   setupMusic();
