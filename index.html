@@ -162,6 +162,11 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 .login-card input{border:1.5px solid var(--rule);border-radius:12px;padding:9px 12px;background:var(--page);font-size:1rem;color:var(--ink)}
 .login-card .primary{width:100%;margin-top:4px}
 .login-msg{min-height:1.3em;font-size:.85rem;color:#C2473A;margin:4px 0 0}
+.login-msg.ok{color:var(--bamboo)}
+.authtabs{display:flex;gap:6px;margin:14px 0 4px}
+.authtabs button{flex:1;border:1.5px solid var(--rule);background:transparent;color:var(--ink-soft);border-radius:10px;padding:7px 4px;font-size:.9rem;cursor:pointer}
+.authtabs button.on{background:var(--ink);color:var(--page);border-color:var(--ink)}
+.linkbtn{background:none;border:none;color:var(--ink-soft);text-decoration:underline;cursor:pointer;font-size:.82rem;justify-self:start;padding:2px 0}
 .signout{border:1.5px solid var(--rule);background:transparent;border-radius:999px;padding:4px 12px;font-size:.85rem;cursor:pointer;color:var(--ink-soft)}
 .signout:hover{border-color:var(--ink);color:var(--ink)}
 .status{font-size:.78rem;color:var(--ink-soft);margin-top:24px}
@@ -198,12 +203,23 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   <div class="login-card">
     <svg width="84" height="84" viewBox="0 4 64 60" aria-hidden="true" id="loginPanda"></svg>
     <h1>Panda Notebook</h1>
-    <p class="sub">Sign in to open your notebook.</p>
+        <p class="sub" id="loginSub">Sign in to open your notebook.</p>
+    <div class="authtabs" role="group" aria-label="Sign in or create account">
+      <button type="button" id="tabSignin" class="on">Sign in</button>
+      <button type="button" id="tabSignup">Create account</button>
+    </div>
     <form id="loginForm">
       <label>Email<input type="email" id="loginEmail" autocomplete="username" required></label>
       <label>Password<input type="password" id="loginPass" autocomplete="current-password" required></label>
       <button class="primary" type="submit" id="loginBtn">Sign in</button>
+      <button type="button" class="linkbtn" id="forgotBtn">Forgot password?</button>
       <p class="login-msg" id="loginMsg" role="alert"></p>
+    </form>
+    <form id="resetForm" hidden>
+      <p class="sub">Set a new password for your account.</p>
+      <label>New password<input type="password" id="resetPass" autocomplete="new-password" required></label>
+      <button class="primary" type="submit" id="resetBtn">Save new password</button>
+      <p class="login-msg" id="resetMsg" role="alert"></p>
     </form>
   </div>
 </section>
@@ -904,23 +920,77 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     $("login").hidden = true; $("app").hidden = false; $("attachRow").hidden = false;
     render(); store.load();
   }
+  
+    let authMode = "signin";
+  const setMsg = (t, ok) => { const m = $("loginMsg"); m.textContent = t || ""; m.classList.toggle("ok", !!ok); };
+  function setMode(m) {
+    authMode = m; setMsg("");
+    $("tabSignin").classList.toggle("on", m === "signin");
+    $("tabSignup").classList.toggle("on", m === "signup");
+    $("loginBtn").textContent = m === "signup" ? "Create account" : "Sign in";
+    $("loginSub").textContent = m === "signup" ? "Pick an email and password to start your notebook." : "Sign in to open your notebook.";
+    $("loginPass").autocomplete = m === "signup" ? "new-password" : "current-password";
+    $("forgotBtn").hidden = m === "signup";
+  }
+  $("tabSignin").onclick = () => setMode("signin");
+  $("tabSignup").onclick = () => setMode("signup");
+
   $("loginForm").addEventListener("submit", async e => {
     e.preventDefault();
-    const b = $("loginBtn"); b.disabled = true; b.textContent = "Signing in…";
-    const { data, error } = await sb.auth.signInWithPassword({ email: $("loginEmail").value.trim(), password: $("loginPass").value });
-    b.disabled = false; b.textContent = "Sign in";
-    if (error) { $("loginMsg").textContent = error.message; return; }
-    $("loginPass").value = "";
-    startApp(data.session);
+    const email = $("loginEmail").value.trim(), pass = $("loginPass").value;
+    const b = $("loginBtn"); b.disabled = true; const label = b.textContent; b.textContent = "…";
+    if (authMode === "signup") {
+      const { data, error } = await sb.auth.signUp({ email, password: pass });
+      b.disabled = false; b.textContent = label;
+      if (error) { setMsg(error.message); return; }
+      if (data.session) { $("loginPass").value = ""; startApp(data.session); }
+      else setMsg("Account made. Check your email to confirm, then sign in.", true);
+    } else {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      b.disabled = false; b.textContent = label;
+      if (error) { setMsg(error.message); return; }
+      $("loginPass").value = ""; startApp(data.session);
+    }
   });
+
+  $("forgotBtn").onclick = async () => {
+    const email = $("loginEmail").value.trim();
+    if (!email) { setMsg("Type your email above first, then tap Forgot password."); return; }
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    setMsg(error ? error.message : "If that account exists, a reset link is on its way to your email.", !error);
+  };
+
+  function showReset() {
+    $("login").hidden = false; $("app").hidden = true;
+    $("loginForm").hidden = true; $("resetForm").hidden = false;
+    $("tabSignin").parentElement.hidden = true; $("loginSub").hidden = true;
+  }
+  $("resetForm").addEventListener("submit", async e => {
+    e.preventDefault();
+    const b = $("resetBtn"); b.disabled = true; b.textContent = "Saving…";
+    const { error } = await sb.auth.updateUser({ password: $("resetPass").value });
+    b.disabled = false; b.textContent = "Save new password";
+    const m = $("resetMsg");
+    if (error) { m.classList.remove("ok"); m.textContent = error.message; return; }
+    m.classList.add("ok"); m.textContent = "Password updated. Opening your notebook…";
+    const { data: { session } } = await sb.auth.getSession();
+    setTimeout(() => { $("resetForm").hidden = true; $("loginForm").hidden = false;
+      $("tabSignin").parentElement.hidden = false; $("loginSub").hidden = false;
+      if (session) startApp(session); }, 900);
+  });
+
   $("signOut").onclick = async () => { await sb.auth.signOut(); showLogin(); };
 
   (async () => {
-    if (!sb) { showLogin("Add your Supabase URL and key to config.js, then reload."); $("loginBtn").disabled = true; return; }
+    if (!sb) { showLogin("Add your Supabase URL and key to config.js, then reload."); $("loginBtn").disabled = true; $("tabSignup").disabled = true; return; }
+    sb.auth.onAuthStateChange((ev, session) => {
+      if (ev === "PASSWORD_RECOVERY") showReset();
+      else if (ev === "SIGNED_OUT") showLogin();
+    });
     const { data: { session } } = await sb.auth.getSession();
     if (session) startApp(session); else showLogin();
-    sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") showLogin(); });
   })();
+  
 
   // ---------- background music ----------
   function setupMusic() {
