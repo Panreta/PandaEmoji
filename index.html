@@ -191,7 +191,11 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 .tracklist{max-height:150px;overflow:auto;display:grid;gap:4px;margin-bottom:8px;min-width:0}
 .trackrow{display:flex;align-items:center;gap:6px;min-width:0;border:1.5px solid var(--rule);background:transparent;border-radius:9px;padding:6px 8px;cursor:pointer;font-size:.82rem;text-align:left;color:var(--ink)}
 .trackrow.on{border-color:var(--bamboo);background:var(--mist)}
-.trackrow .tname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trackrow .tname{flex:1;min-width:0;overflow:hidden;white-space:nowrap}
+.trackrow .tname .tscroll{display:inline-block;white-space:nowrap}
+@keyframes marquee{0%,10%{transform:translateX(0)}50%{transform:translateX(var(--sx,0))}90%,100%{transform:translateX(0)}}
+.trackrow:hover .tname.scroll .tscroll,.trackrow.on .tname.scroll .tscroll{animation:marquee var(--dur,6s) linear infinite}
+@media (prefers-reduced-motion: reduce){.trackrow .tname.scroll .tscroll{animation:none}}
 .trackrow .tdel{border:none;background:none;color:var(--ink-soft);cursor:pointer;font-size:.8rem;padding:0 2px}
 .trackempty{font-size:.78rem;color:var(--ink-soft);padding:4px 2px}
 @keyframes sway{0%,100%{transform:rotate(-2.5deg)}50%{transform:rotate(2.5deg)}}
@@ -1165,15 +1169,38 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       library.forEach((tr, i) => {
         const row = document.createElement("button"); row.type = "button";
         row.className = "trackrow" + (mode === "lib" && i === libIndex && playing ? " on" : "");
-        const name = document.createElement("span"); name.className = "tname"; name.textContent = tr.title;
+        
+        const name = document.createElement("span"); name.className = "tname"; name.title = tr.title + " (double-click to rename)";
+        const inner = document.createElement("span"); inner.className = "tscroll"; inner.textContent = tr.title;
+        name.appendChild(inner);
+        name.ondblclick = ev => { ev.stopPropagation(); const nn = prompt("Rename track", tr.title); if (nn && nn.trim()) renameTrack(tr, nn.trim()); };
         const del = document.createElement("span"); del.className = "tdel"; del.textContent = "✕"; del.title = "Remove";
         del.onclick = ev => { ev.stopPropagation(); removeTrack(tr); };
         row.append(name, del);
+        
         row.onclick = () => { mode = "lib"; playing = true;
           btn.textContent = "⏸"; btn.classList.add("on"); btn.setAttribute("aria-pressed", "true");
           ensureCtx(); stopPad(); startLibrary(i); };
-        box.appendChild(row);
+                box.appendChild(row);
       });
+      requestAnimationFrame(measureTracks);
+    }
+    function measureTracks() {
+      $("trackList").querySelectorAll(".tname").forEach(nm => {
+        const inner = nm.firstChild; if (!inner) return;
+        const over = inner.scrollWidth - nm.clientWidth;
+        if (nm.clientWidth > 0 && over > 4) {
+          nm.classList.add("scroll");
+          nm.style.setProperty("--sx", (-over - 6) + "px");
+          nm.style.setProperty("--dur", Math.max(5, (over + nm.clientWidth) / 18) + "s");
+        } else nm.classList.remove("scroll");
+      });
+    }
+    async function renameTrack(tr, title) {
+      if (!sb || title === tr.title) return;
+      const { error } = await sb.from("tracks").update({ title }).eq("id", tr.id);
+      if (error) { note.textContent = "Rename failed: " + error.message; return; }
+      await loadLibrary();
     }
     function startLibrary(i) {
       if (!library.length) { note.textContent = "Library is empty. Upload some music."; return; }
@@ -1211,8 +1238,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     }
 
     btn.onclick = () => { ensureCtx(); playing ? stop() : start(); };
-    moreBtn.onclick = () => { const open = panel.hidden; panel.hidden = !open; moreBtn.setAttribute("aria-expanded", String(open)); };
-    $("srcCalm").onclick = () => setMode("calm");
+    moreBtn.onclick = () => { const open = panel.hidden; panel.hidden = !open; moreBtn.setAttribute("aria-expanded", String(open)); if (open) requestAnimationFrame(measureTracks); };    $("srcCalm").onclick = () => setMode("calm");
     $("srcLib").onclick = () => setMode("lib");
     $("srcMine").onclick = () => setMode("file");
     $("uploadMusic").onclick = () => $("libFile").click();
