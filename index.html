@@ -178,17 +178,18 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 .pbtn{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--rule);background:var(--page);color:var(--ink);font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);display:grid;place-items:center}
 .pbtn.on{background:var(--bamboo);color:#fff;border-color:var(--bamboo)}
 .pbtn.more{width:40px;height:40px;font-size:1rem}
-.ppanel{background:var(--page);border:1.5px solid var(--rule);border-radius:16px;padding:14px;width:230px;box-shadow:0 6px 20px rgba(0,0,0,.16);display:grid;gap:10px}
-.ppanel .seg{display:flex;gap:6px}
-.ppanel .seg button{flex:1;border:1.5px solid var(--rule);background:transparent;color:var(--ink-soft);border-radius:10px;padding:6px 4px;font-size:.85rem;cursor:pointer}
+.ppanel{background:var(--page);border:1.5px solid var(--rule);border-radius:16px;padding:14px;width:230px;max-width:calc(100vw - 28px);box-shadow:0 6px 20px rgba(0,0,0,.16);display:grid;gap:10px}
+.ppanel>*{min-width:0}
+.ppanel .seg{display:flex;gap:6px;min-width:0}
+.ppanel .seg button{flex:1;min-width:0;border:1.5px solid var(--rule);background:transparent;color:var(--ink-soft);border-radius:10px;padding:6px 4px;font-size:.8rem;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ppanel .seg button.on{background:var(--ink);color:var(--page);border-color:var(--ink)}
 .ppanel label{display:grid;gap:4px;font-size:.8rem;color:var(--ink-soft)}
 .ppanel input[type=range]{width:100%;accent-color:var(--bamboo)}
 .ppanel .pick{border:1.5px dashed var(--rule);background:transparent;border-radius:10px;padding:7px;cursor:pointer;font-size:.82rem;color:var(--ink-soft)}
 .ppanel .pick:hover{border-color:var(--ink);color:var(--ink)}
 .ppanel .pnote{margin:0;font-size:.76rem;color:var(--ink-soft)}
-.tracklist{max-height:150px;overflow:auto;display:grid;gap:4px;margin-bottom:8px}
-.trackrow{display:flex;align-items:center;gap:6px;border:1.5px solid var(--rule);background:transparent;border-radius:9px;padding:6px 8px;cursor:pointer;font-size:.82rem;text-align:left;color:var(--ink)}
+.tracklist{max-height:150px;overflow:auto;display:grid;gap:4px;margin-bottom:8px;min-width:0}
+.trackrow{display:flex;align-items:center;gap:6px;min-width:0;border:1.5px solid var(--rule);background:transparent;border-radius:9px;padding:6px 8px;cursor:pointer;font-size:.82rem;text-align:left;color:var(--ink)}
 .trackrow.on{border-color:var(--bamboo);background:var(--mist)}
 .trackrow .tname{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .trackrow .tdel{border:none;background:none;color:var(--ink-soft);cursor:pointer;font-size:.8rem;padding:0 2px}
