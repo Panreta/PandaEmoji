@@ -338,7 +338,6 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     <div class="seg" role="group" aria-label="Music source">
       <button id="srcCalm" class="on" type="button">Soothing</button>
       <button id="srcLib" type="button">Library</button>
-      <button id="srcMine" type="button">My file</button>
     </div>
     <div id="libBox" hidden>
       <div class="tracklist" id="trackList"></div>
@@ -348,8 +347,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     <label>Volume
       <input type="range" id="vol" min="0" max="100" value="40" aria-label="Music volume">
     </label>
-    <button class="pick" id="pickMusic" type="button" hidden>Choose an audio file…</button>
-    <input type="file" id="musicFile" accept="audio/*" hidden>
+
     <p class="pnote" id="musicNote">Built-in soothing tune.</p>
   </div>
   <div class="pbar">
@@ -1062,7 +1060,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   function setupMusic() {
     let actx = null, master = null, playing = false, mode = "calm", vol = 0.4;
     let padTimer = null, padNodes = [], padFilter = null, lfo = null;
-    let fileAudio = null, fileURL = null, fileName = "";
+    let fileAudio = null;
     const MUSIC_BUCKET = "music";
     let library = [], libIndex = 0, libLoaded = false;
     const ensureAudio = () => {
@@ -1140,12 +1138,6 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       if (lfo) { try { lfo.stop(); } catch (e) {} lfo = null; }
     }
 
-    function startFile() {
-      if (!fileURL) { setMode("calm"); note.textContent = "Pick a file first — playing the built-in tune."; return start(); }
-      ensureCtx(); ensureAudio();
-      fileAudio.loop = true; fileAudio.src = fileURL; fileAudio.volume = vol;
-      fileAudio.play().catch(() => { note.textContent = "Couldn’t play that file."; });
-    }
     function stopFile() { if (fileAudio) fileAudio.pause(); }
 
     // ---- shared music library (Supabase) ----
@@ -1211,36 +1203,44 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       note.textContent = "Playing: " + library[libIndex].title;
       renderTracks();
     }
-    async function removeTrack(tr) {
+        async function removeTrack(tr) {
       if (!sb) return;
+      if (!confirm("Remove “" + tr.title + "” from the library?")) return;
+      const { data, error } = await sb.from("tracks").delete().eq("id", tr.id).select();
+      if (error) { note.textContent = "Delete failed: " + error.message; return; }
+      if (!data || !data.length) { note.textContent = "That track couldn’t be removed (no permission)."; return; }
       await sb.storage.from(MUSIC_BUCKET).remove([tr.path]).catch(() => {});
-      await sb.from("tracks").delete().eq("id", tr.id).catch(() => {});
       await loadLibrary();
     }
 
     function start() { playing = true; btn.textContent = "⏸"; btn.classList.add("on"); btn.setAttribute("aria-pressed", "true");
-      if (mode === "file") startFile(); else if (mode === "lib") startLibrary(libIndex); else startPad(); }
-    function stop() { playing = false; btn.textContent = "▶"; btn.classList.remove("on"); btn.setAttribute("aria-pressed", "false");
+      if (mode === "lib") startLibrary(libIndex); else startPad(); }    function stop() { playing = false; btn.textContent = "▶"; btn.classList.remove("on"); btn.setAttribute("aria-pressed", "false");
       stopPad(); stopFile(); }
 
     function setMode(m) {
       mode = m;
       $("srcCalm").classList.toggle("on", m === "calm");
+      
       $("srcLib").classList.toggle("on", m === "lib");
-      $("srcMine").classList.toggle("on", m === "file");
       $("libBox").hidden = m !== "lib";
-      $("pickMusic").hidden = m !== "file";
-      note.textContent = m === "file" ? (fileName ? "Playing: " + fileName : "No file chosen yet.")
-                       : m === "lib" ? "Shared music library." : "Built-in soothing tune.";
+      note.textContent = m === "lib" ? "Shared music library." : "Built-in soothing tune.";
       if (m === "lib" && !libLoaded) loadLibrary();
       if (playing) { stopPad(); stopFile();
-        if (m === "file") startFile(); else if (m === "lib") startLibrary(libIndex); else startPad(); }
+        if (m === "lib") startLibrary(libIndex); else startPad(); }
     }
 
     btn.onclick = () => { ensureCtx(); playing ? stop() : start(); };
     moreBtn.onclick = () => { const open = panel.hidden; panel.hidden = !open; moreBtn.setAttribute("aria-expanded", String(open)); if (open) requestAnimationFrame(measureTracks); };    $("srcCalm").onclick = () => setMode("calm");
     $("srcLib").onclick = () => setMode("lib");
-    $("srcMine").onclick = () => setMode("file");
+        $("pickMusic").onclick = () => $("musicFile").click();
+    $("musicFile").onchange = e => {
+      const f = e.target.files[0]; e.target.value = "";
+      if (!f) return;
+      if (fileURL) URL.revokeObjectURL(fileURL);
+      fileURL = URL.createObjectURL(f); fileName = f.name;
+      idb.put("track", f); idb.put("trackName", f.name);
+      setMode("file"); if (!playing) start(); else startFile();
+    };
     $("uploadMusic").onclick = () => $("libFile").click();
     $("libFile").onchange = async e => {
       const files = [...e.target.files].filter(f => f.type.startsWith("audio") && f.size <= MAX_BYTES);
@@ -1271,11 +1271,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       setMode("file"); if (!playing) start(); else startFile();
     };
 
-    // restore a previously chosen track
-    (async () => {
-      const blob = await idb.get("track");
-      if (blob) { fileURL = URL.createObjectURL(blob); fileName = await idb.get("trackName") || "your track"; }
-    })();
+
   }
 })();
 </script>
