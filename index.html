@@ -347,7 +347,6 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     <label>Volume
       <input type="range" id="vol" min="0" max="100" value="40" aria-label="Music volume">
     </label>
-
     <p class="pnote" id="musicNote">Built-in soothing tune.</p>
   </div>
   <div class="pbar">
@@ -1161,7 +1160,6 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       library.forEach((tr, i) => {
         const row = document.createElement("button"); row.type = "button";
         row.className = "trackrow" + (mode === "lib" && i === libIndex && playing ? " on" : "");
-        
         const name = document.createElement("span"); name.className = "tname"; name.title = tr.title + " (double-click to rename)";
         const inner = document.createElement("span"); inner.className = "tscroll"; inner.textContent = tr.title;
         name.appendChild(inner);
@@ -1169,11 +1167,10 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         const del = document.createElement("span"); del.className = "tdel"; del.textContent = "✕"; del.title = "Remove";
         del.onclick = ev => { ev.stopPropagation(); removeTrack(tr); };
         row.append(name, del);
-        
         row.onclick = () => { mode = "lib"; playing = true;
           btn.textContent = "⏸"; btn.classList.add("on"); btn.setAttribute("aria-pressed", "true");
           ensureCtx(); stopPad(); startLibrary(i); };
-                box.appendChild(row);
+        box.appendChild(row);
       });
       requestAnimationFrame(measureTracks);
     }
@@ -1203,7 +1200,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       note.textContent = "Playing: " + library[libIndex].title;
       renderTracks();
     }
-        async function removeTrack(tr) {
+    async function removeTrack(tr) {
       if (!sb) return;
       if (!confirm("Remove “" + tr.title + "” from the library?")) return;
       const { data, error } = await sb.from("tracks").delete().eq("id", tr.id).select();
@@ -1214,13 +1211,13 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     }
 
     function start() { playing = true; btn.textContent = "⏸"; btn.classList.add("on"); btn.setAttribute("aria-pressed", "true");
-      if (mode === "lib") startLibrary(libIndex); else startPad(); }    function stop() { playing = false; btn.textContent = "▶"; btn.classList.remove("on"); btn.setAttribute("aria-pressed", "false");
+      if (mode === "lib") startLibrary(libIndex); else startPad(); }
+    function stop() { playing = false; btn.textContent = "▶"; btn.classList.remove("on"); btn.setAttribute("aria-pressed", "false");
       stopPad(); stopFile(); }
 
     function setMode(m) {
       mode = m;
       $("srcCalm").classList.toggle("on", m === "calm");
-      
       $("srcLib").classList.toggle("on", m === "lib");
       $("libBox").hidden = m !== "lib";
       note.textContent = m === "lib" ? "Shared music library." : "Built-in soothing tune.";
@@ -1230,17 +1227,9 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     }
 
     btn.onclick = () => { ensureCtx(); playing ? stop() : start(); };
-    moreBtn.onclick = () => { const open = panel.hidden; panel.hidden = !open; moreBtn.setAttribute("aria-expanded", String(open)); if (open) requestAnimationFrame(measureTracks); };    $("srcCalm").onclick = () => setMode("calm");
+    moreBtn.onclick = () => { const open = panel.hidden; panel.hidden = !open; moreBtn.setAttribute("aria-expanded", String(open)); if (open) requestAnimationFrame(measureTracks); };
+    $("srcCalm").onclick = () => setMode("calm");
     $("srcLib").onclick = () => setMode("lib");
-        $("pickMusic").onclick = () => $("musicFile").click();
-    $("musicFile").onchange = e => {
-      const f = e.target.files[0]; e.target.value = "";
-      if (!f) return;
-      if (fileURL) URL.revokeObjectURL(fileURL);
-      fileURL = URL.createObjectURL(f); fileName = f.name;
-      idb.put("track", f); idb.put("trackName", f.name);
-      setMode("file"); if (!playing) start(); else startFile();
-    };
     $("uploadMusic").onclick = () => $("libFile").click();
     $("libFile").onchange = async e => {
       const files = [...e.target.files].filter(f => f.type.startsWith("audio") && f.size <= MAX_BYTES);
@@ -1261,16 +1250,6 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       await loadLibrary();
     };
     $("vol").oninput = e => { vol = e.target.value / 100; if (master) master.gain.setTargetAtTime(vol, actx.currentTime, 0.05); if (fileAudio) fileAudio.volume = vol; };
-    $("pickMusic").onclick = () => $("musicFile").click();
-    $("musicFile").onchange = e => {
-      const f = e.target.files[0]; e.target.value = "";
-      if (!f) return;
-      if (fileURL) URL.revokeObjectURL(fileURL);
-      fileURL = URL.createObjectURL(f); fileName = f.name;
-      idb.put("track", f); idb.put("trackName", f.name);
-      setMode("file"); if (!playing) start(); else startFile();
-    };
-
 
   }
 })();
