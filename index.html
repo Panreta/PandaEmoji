@@ -173,6 +173,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 .signout{border:1.5px solid var(--rule);background:transparent;border-radius:999px;padding:4px 12px;font-size:.85rem;cursor:pointer;color:var(--ink-soft)}
 .signout:hover{border-color:var(--ink);color:var(--ink)}
 .status{font-size:.78rem;color:var(--ink-soft);margin-top:24px}
+.leftcol{display:flex;flex-direction:column;gap:22px;min-width:0}
 .goals{background:var(--page);border-radius:14px;padding:16px 18px 18px;margin-top:22px;box-shadow:0 1px 0 var(--rule),0 2px 10px rgba(0,0,0,.05)}
 .goals h3{font-size:1.05rem;margin:0 0 3px;font-weight:600}
 .goals .hint{margin:0 0 12px;color:var(--ink-soft);font-size:.85rem}
@@ -270,6 +271,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   </header>
 
   <div class="grid">
+    <div class="leftcol">
     <section class="journal" aria-label="Journal page">
       <div class="datebar">
         <button class="icon-btn" id="prev" aria-label="Previous day">‹</button>
@@ -315,6 +317,16 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         </div>
       </form>
     </section>
+    <section class="goals" aria-label="Long-term goals">
+      <h3>Long-term goals</h3>
+      <p class="hint">Bigger things you’re working toward. Tick them off when you get there.</p>
+      <ul class="goal-list" id="goalList"></ul>
+      <form id="goalForm" autocomplete="off">
+        <input id="goalText" maxlength="120" placeholder="A goal to work toward…" aria-label="New goal">
+        <button class="primary" type="submit">Add goal</button>
+      </form>
+    </section>
+    </div>
 
     <section aria-label="Your practice, visualized">
       <div class="panel">
@@ -342,16 +354,6 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         <p class="hint">Your Good and Glowing bullets, with the photos and videos you added.</p>
         <ul class="bright" id="bright"></ul>
       </div>
-    </section>
-
-    <section class="goals" aria-label="Long-term goals">
-      <h3>Long-term goals</h3>
-      <p class="hint">Bigger things you’re working toward. Tick them off when you get there.</p>
-      <ul class="goal-list" id="goalList"></ul>
-      <form id="goalForm" autocomplete="off">
-        <input id="goalText" maxlength="120" placeholder="A goal to work toward…" aria-label="New goal">
-        <button class="primary" type="submit">Add goal</button>
-      </form>
     </section>
   </div>
   <p class="status" id="status">Loading your notebook…</p>
