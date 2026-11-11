@@ -173,6 +173,19 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 .signout{border:1.5px solid var(--rule);background:transparent;border-radius:999px;padding:4px 12px;font-size:.85rem;cursor:pointer;color:var(--ink-soft)}
 .signout:hover{border-color:var(--ink);color:var(--ink)}
 .status{font-size:.78rem;color:var(--ink-soft);margin-top:24px}
+.goals{background:var(--page);border-radius:14px;padding:16px 18px 18px;margin-top:22px;box-shadow:0 1px 0 var(--rule),0 2px 10px rgba(0,0,0,.05)}
+.goals h3{font-size:1.05rem;margin:0 0 3px;font-weight:600}
+.goals .hint{margin:0 0 12px;color:var(--ink-soft);font-size:.85rem}
+.goal-list{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:8px}
+.goal-row{display:flex;align-items:center;gap:10px;font-size:.95rem}
+.goal-row input[type=checkbox]{width:18px;height:18px;accent-color:var(--bamboo);flex:none;cursor:pointer}
+.goal-row .gtext{flex:1;min-width:0;overflow-wrap:anywhere}
+.goal-row.done .gtext{text-decoration:line-through;color:var(--ink-soft)}
+.goal-row .gdel{border:none;background:none;color:var(--ink-soft);cursor:pointer;font-size:.9rem;padding:2px 4px;border-radius:6px}
+.goal-row .gdel:hover{color:var(--ink);background:var(--mist)}
+.goal-empty{color:var(--ink-soft);font-size:.9rem}
+#goalForm{display:flex;gap:8px;border-top:none;padding-top:0}
+#goalForm input{flex:1;min-width:0;border:1.5px solid var(--rule);border-radius:10px;padding:8px 10px;background:var(--page);color:var(--ink)}
 .player{position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:40;display:flex;flex-direction:column;align-items:flex-end;gap:8px}
 .pbar{display:flex;gap:6px}
 .pbtn{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--rule);background:var(--page);color:var(--ink);font-size:1.1rem;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.12);display:grid;place-items:center}
@@ -329,6 +342,15 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         <p class="hint">Your Good and Glowing bullets, with the photos and videos you added.</p>
         <ul class="bright" id="bright"></ul>
       </div>
+    </section>
+    <section class="goals" aria-label="Long-term goals">
+      <h3>Long-term goals</h3>
+      <p class="hint">Bigger things you’re working toward. Tick them off when you get there.</p>
+      <ul class="goal-list" id="goalList"></ul>
+      <form id="goalForm" autocomplete="off">
+        <input id="goalText" maxlength="120" placeholder="A goal to work toward…" aria-label="New goal">
+        <button class="primary" type="submit">Add goal</button>
+      </form>
     </section>
   </div>
   <p class="status" id="status">Loading your notebook…</p>
@@ -863,8 +885,8 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         g.addEventListener("keydown", ev => { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); ev.stopPropagation(); onClick(); } });
         return g;
       };
-      mkBtn(bx + bw - 34, "Show another note", "↻", () => { pandaMsg++; renderGrove(); });
-      mkBtn(bx + bw - 15, "Close the note", "✕", () => { bubbleOpen = false; renderGrove(); });
+      mkBtn(bx + bw - 34, "Show another note", "\u21BB", () => { pandaMsg++; renderGrove(); });
+      mkBtn(bx + bw - 15, "Close the note", "\u2715", () => { bubbleOpen = false; renderGrove(); });
     }
     firstGrow = false;
   }
@@ -972,17 +994,63 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   buildControls();
   setupMusic();
 
+  // ---------- long-term goals ----------
+  const goals = [];
+  async function loadGoals() {
+    if (!sb) return;
+    const { data, error } = await sb.from("goals").select("id,text,done").order("created_at");
+    if (error) return;
+    goals.length = 0; data.forEach(g => goals.push(g)); renderGoals();
+  }
+  function renderGoals() {
+    const ul = $("goalList"); ul.innerHTML = "";
+    if (!goals.length) {
+      const li = document.createElement("li"); li.className = "goal-empty";
+      li.textContent = "No goals yet. Add one to aim for.";
+      ul.appendChild(li); return;
+    }
+    goals.forEach(g => {
+      const li = document.createElement("li"); li.className = "goal-row" + (g.done ? " done" : "");
+      const cb = document.createElement("input"); cb.type = "checkbox"; cb.checked = !!g.done;
+      cb.setAttribute("aria-label", "Mark goal done"); cb.onchange = () => toggleGoal(g);
+      const tx = document.createElement("span"); tx.className = "gtext"; tx.textContent = g.text;
+      const del = document.createElement("button"); del.type = "button"; del.className = "gdel";
+      del.textContent = "✕"; del.setAttribute("aria-label", "Delete goal"); del.onclick = () => removeGoal(g);
+      li.append(cb, tx, del); ul.appendChild(li);
+    });
+  }
+  async function addGoal(text) {
+    if (!sb) return;
+    const { data, error } = await sb.from("goals").insert({ text }).select();
+    if (error) { setStatus("Couldn’t add goal: " + error.message); return; }
+    if (data && data[0]) goals.push({ id: data[0].id, text: data[0].text, done: data[0].done });
+    renderGoals();
+  }
+  async function toggleGoal(g) {
+    g.done = !g.done; renderGoals();
+    if (sb) await sb.from("goals").update({ done: g.done }).eq("id", g.id);
+  }
+  async function removeGoal(g) {
+    if (sb) await sb.from("goals").delete().eq("id", g.id);
+    const i = goals.indexOf(g); if (i >= 0) goals.splice(i, 1); renderGoals();
+  }
+  $("goalForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const t = $("goalText").value.trim(); if (!t) return;
+    $("goalText").value = ""; addGoal(t);
+  });
+
   // ---------- sign in ----------
   $("loginPanda").innerHTML = PANDA_HEAD;
   function showLogin(msg) {
-    uid = null; entries.clear(); signed.clear();
+    uid = null; entries.clear(); signed.clear(); goals.length = 0; renderGoals();
     $("app").hidden = true; $("login").hidden = false;
     $("loginMsg").textContent = msg || "";
   }
   function startApp(session) {
     uid = session.user.id;
     $("login").hidden = true; $("app").hidden = false; $("attachRow").hidden = false;
-    render(); store.load();
+    render(); store.load(); loadGoals();
   }
   let authMode = "signin";
   const setMsg = (t, ok) => { const m = $("loginMsg"); m.textContent = t || ""; m.classList.toggle("ok", !!ok); };
