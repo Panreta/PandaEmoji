@@ -316,6 +316,16 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       </form>
     </section>
 
+    <section class="goals" aria-label="Long-term goals">
+      <h3>Long-term goals</h3>
+      <p class="hint">Bigger things you’re working toward. Tick them off when you get there.</p>
+      <ul class="goal-list" id="goalList"></ul>
+      <form id="goalForm" autocomplete="off">
+        <input id="goalText" maxlength="120" placeholder="A goal to work toward…" aria-label="New goal">
+        <button class="primary" type="submit">Add goal</button>
+      </form>
+    </section>
+
     <section aria-label="Your practice, visualized">
       <div class="panel">
         <h3>Your bamboo garden</h3>
@@ -330,16 +340,6 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         <div class="cal-wrap"><div class="cal" id="cal"></div></div>
         <div class="legend" id="legend"></div>
       </div>
-
-    <section class="goals" aria-label="Long-term goals">
-      <h3>Long-term goals</h3>
-      <p class="hint">Bigger things you’re working toward. Tick them off when you get there.</p>
-      <ul class="goal-list" id="goalList"></ul>
-      <form id="goalForm" autocomplete="off">
-        <input id="goalText" maxlength="120" placeholder="A goal to work toward…" aria-label="New goal">
-        <button class="primary" type="submit">Add goal</button>
-      </form>
-    </section>
 
       <div class="panel">
         <h3>What you’ve been working on</h3>
