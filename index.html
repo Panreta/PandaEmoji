@@ -798,6 +798,16 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     tiles.sort((a, b) => (a.c + a.r) - (b.c + b.r) || a.r - b.r); // back to front
 
     const SPOTS = [[0,0],[-11,-4],[11,-4],[-7,5],[8,5]];
+    const BAMBOO = [
+      { culm:"#2F6B2A", node:"#224F1C" }, // deep green
+      { culm:"#4F8F3E", node:"#3E7330" }, // classic green
+      { culm:"#8CC152", node:"#6E9E3C" }, // light green
+      { culm:"#6FAE9A", node:"#4E8C77" }, // green with a little blue
+      { culm:"#3BA891", node:"#2C7E6B" }, // blue-green / teal
+      { culm:"#D6A52A", node:"#AF831A" }, // golden
+      { culm:"#9A7BA0", node:"#6E557A" }, // muted purple
+      { culm:"#7E6A4A", node:"#5E4E34" }  // tan / dry
+    ];
     let order = 0;
     tiles.forEach(({k, c, r}) => {
       const [x, y] = pt(c, r); const cy = y + TH;
@@ -818,6 +828,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       const plant = el("g", {class: firstGrow ? "grow" : "", style:`animation-delay:${(order++)*40}ms`}, g);
       const stalks = s.items.slice(0, 5).map((it, j) => ({it, j, sp:SPOTS[j]})).sort((a, b) => a.sp[1] - b.sp[1]);
       stalks.forEach(({it, j, sp}) => {
+        const bt = BAMBOO[(hashStr(d) + j) % BAMBOO.length];
         const bx = x + sp[0], by = cy + sp[1] + 2;
         const h = 18 + Math.min(Math.max(s.mins, 10), 120) / 120 * 54 - j*3;
         const top = by - h;
@@ -827,19 +838,18 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         el("ellipse", {cx:bx+4, cy:by+.5, rx:5, ry:1.5, fill:"#000", opacity:.18}, plant);
         const st = el("g", {transform:`rotate(${lean.toFixed(1)} ${bx} ${by})`}, plant);
         const wB = 2.7, wT = 1.5, wAt = yy => wT + (wB - wT) * (yy - top) / h;
-        el("path", {d:`M${bx-wB} ${by+1} L${bx-wT} ${top+3} Q${bx} ${top-1} ${bx+wT} ${top+3} L${bx+wB} ${by+1} Z`, fill:"var(--bamboo)"}, st);
-        el("path", {d:`M${bx-wB} ${by+1} L${bx-wB+.3} ${by-6} L${bx+wB-.3} ${by-6} L${bx+wB} ${by+1} Z`, fill:"var(--bamboo-node)", opacity:.55}, st);
+                el("path", {d:`M${bx-wB} ${by+1} L${bx-wT} ${top+3} Q${bx} ${top-1} ${bx+wT} ${top+3} L${bx+wB} ${by+1} Z`, fill:bt.culm}, st);
+        el("path", {d:`M${bx-wB} ${by+1} L${bx-wB+.3} ${by-6} L${bx+wB-.3} ${by-6} L${bx+wB} ${by+1} Z`, fill:bt.node, opacity:.55}, st);
         el("line", {x1:bx-wB*.45, y1:by-1, x2:bx-wT*.45, y2:top+4, stroke:"#fff", "stroke-width":.8, opacity:.28}, st);
         const nodes = [];
         for (let ny = by - 9; ny > top + 5; ny -= 9 + j % 2) {
           nodes.push(ny); const w = wAt(ny) + .5;
-          el("line", {x1:bx-w, y1:ny, x2:bx+w, y2:ny, stroke:"var(--bamboo-node)", "stroke-width":1.3, "stroke-linecap":"round"}, st);
+                    el("line", {x1:bx-w, y1:ny, x2:bx+w, y2:ny, stroke:bt.node, "stroke-width":1.3, "stroke-linecap":"round"}, st);
         }
         // leafy twigs on the upper nodes
         nodes.filter(ny => ny < by - h*.45).slice(-3).forEach((ny, q) => {
           const side = (q + j) % 2 ? 1 : -1, tx = bx + side*5, ty = ny - 3;
-          el("line", {x1:bx + side*wAt(ny), y1:ny, x2:tx, y2:ty, stroke:"var(--bamboo-node)", "stroke-width":.8}, st);
-          el("path", {d:`M${tx} ${ty} q ${side*4} -2.5 ${side*10} 2 q ${-side*5} .5 ${-side*10} -2 z`, fill:feelVar(it.feel)}, st);
+          el("line", {x1:bx + side*wAt(ny), y1:ny, x2:tx, y2:ty, stroke:bt.node, "stroke-width":.8}, st);          el("path", {d:`M${tx} ${ty} q ${side*4} -2.5 ${side*10} 2 q ${-side*5} .5 ${-side*10} -2 z`, fill:feelVar(it.feel)}, st);
           el("path", {d:`M${tx} ${ty} q ${side*3} .5 ${side*7} 6 q ${-side*4.5} -2 ${-side*7} -6 z`, fill:feelVar(it.feel)}, st);
         });
         // fresh leaves at the tip
