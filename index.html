@@ -391,7 +391,16 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     {v:1, e:"😣", l:"Rough"}, {v:2, e:"😐", l:"Meh"}, {v:3, e:"🙂", l:"Okay"},
     {v:4, e:"😊", l:"Good"},  {v:5, e:"🤩", l:"Glowing"}
   ];
-  const TAGS = ["Chords","Delighted","Song","Theory","Other"];
+    const TAGS = [
+    {name:"Chords", icon:"🎸"},
+    {name:"Delighted", icon:"😄"},
+    {name:"Song", icon:"𝄞"},
+    {name:"Theory", icon:"⚛️"},
+    {name:"Engineer", icon:"⚙️"},
+    {name:"Other", icon:"✨"}
+  ];
+  const TAG_ICON = Object.fromEntries(TAGS.map(t => [t.name, t.icon]));
+  const TAG_NAMES = TAGS.map(t => t.name);
   const feelVar = v => `var(--f${v})`;
   const $ = id => document.getElementById(id);
 
@@ -506,9 +515,9 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       $("feels").appendChild(b);
     });
     $("tags").innerHTML = "";
-    TAGS.forEach(t => {
+      TAG_NAMES.forEach(t => {
       const b = document.createElement("button");
-      b.type = "button"; b.className = "tagb"; b.textContent = t;
+      b.type = "button"; b.className = "tagb"; b.textContent = TAG_ICON[t] + " " + t;
       b.setAttribute("aria-pressed", t === tag);
       b.onclick = () => { tag = t; buildControls(); };
       $("tags").appendChild(b);
@@ -564,7 +573,7 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
       }
       const meta = document.createElement("span"); meta.className = "meta";
       meta.innerHTML = (it.mins ? `${it.mins} min` : "") + `<span class="chip"></span>`;
-      meta.querySelector(".chip").textContent = it.tag;
+            meta.querySelector(".chip").textContent = (TAG_ICON[it.tag] ? TAG_ICON[it.tag] + " " : "") + it.tag;
       const ed = document.createElement("button"); ed.className = "row-btn"; ed.textContent = "Edit";
       ed.setAttribute("aria-label", "Edit bullet");
       ed.onclick = () => startEdit(it);
@@ -947,14 +956,14 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   // ---------- focus mix ----------
   function renderMix() {
     const counts = {};
-    TAGS.forEach(t => counts[t] = [0,0,0,0,0]);
+    TAG_NAMES.forEach(t => counts[t] = [0,0,0,0,0]);
     entries.forEach(e => e.items.forEach(it => { (counts[it.tag] || counts.Other)[it.feel-1]++; }));
-    const max = Math.max(1, ...TAGS.map(t => counts[t].reduce((a,b)=>a+b,0)));
+      const max = Math.max(1, ...TAG_NAMES.map(t => counts[t].reduce((a,b)=>a+b,0)));
     $("mix").innerHTML = "";
-    TAGS.forEach(t => {
+    TAG_NAMES.forEach(t => {
       const total = counts[t].reduce((a,b)=>a+b,0);
       const row = document.createElement("div"); row.className = "mixrow";
-      const name = document.createElement("span"); name.textContent = t;
+      const name = document.createElement("span"); name.textContent = TAG_ICON[t] + " " + t;
       const bar = document.createElement("div"); bar.className = "bar";
       counts[t].forEach((c, k) => { if (c) { const s = document.createElement("span"); s.style.width = (c/max*100) + "%"; s.style.background = feelVar(k+1); bar.appendChild(s); } });
       const n = document.createElement("span"); n.className = "n"; n.textContent = total;
