@@ -222,6 +222,18 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
 .kit-add button{border:1.5px dashed var(--rule);background:transparent;border-radius:12px;padding:7px 12px;cursor:pointer;font-size:.85rem;color:var(--ink-soft)}
 .kit-add button:hover{border-color:var(--ink);color:var(--ink)}
 .kit-help{margin:12px 0 0;font-size:.78rem;color:var(--ink-soft)}
+  .relax{background:var(--page);border-radius:14px;padding:0;box-shadow:0 1px 0 var(--rule),0 2px 10px rgba(0,0,0,.05);overflow:hidden}
+.relax-head{display:flex;align-items:center;gap:10px;padding:16px 18px;cursor:pointer;user-select:none}
+.relax-head h3{font-size:1.05rem;margin:0;font-weight:600;flex:1}
+.relax-toggle{font-size:1.2rem;color:var(--ink-soft);width:20px;text-align:center}
+.relax-edit{border:1.5px solid var(--rule);background:transparent;border-radius:999px;padding:3px 12px;font-size:.8rem;cursor:pointer;color:var(--ink-soft)}
+.relax-edit:hover{border-color:var(--ink);color:var(--ink)}
+.relax-body{padding:0 18px 18px}
+.relax-view{max-height:360px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55;font-size:.95rem}
+.relax-view.muted{color:var(--ink-soft)}
+.relax-form{display:grid;gap:8px}
+.relax-form textarea{width:100%;min-height:220px;max-height:60vh;resize:vertical;border:1.5px solid var(--rule);border-radius:12px;padding:10px 12px;background:var(--page);color:var(--ink);font:inherit;line-height:1.5}
+.relax-actions{display:flex;gap:8px}
 @keyframes marquee{0%,10%{transform:translateX(0)}50%{transform:translateX(var(--sx,0))}90%,100%{transform:translateX(0)}}
 .trackrow:hover .tname.scroll .tscroll,.trackrow.on .tname.scroll .tscroll{animation:marquee var(--dur,6s) linear infinite}
 @media (prefers-reduced-motion: reduce){.trackrow .tname.scroll .tscroll{animation:none}}
@@ -340,6 +352,23 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
         <input id="goalText" maxlength="120" placeholder="A goal to work toward…" aria-label="New goal">
         <button class="primary" type="submit">Add goal</button>
       </form>
+      </section>
+    <section class="relax" aria-label="How to relax">
+      <div class="relax-head" id="relaxHead">
+        <h3>🫧 How to relax</h3>
+        <button type="button" class="relax-edit" id="relaxEdit">Edit</button>
+        <span class="relax-toggle" id="relaxToggle" aria-hidden="true">+</span>
+      </div>
+      <div class="relax-body" id="relaxBody" hidden>
+        <div class="relax-view" id="relaxView"><p class="relax-text" id="relaxText"></p></div>
+        <div class="relax-form" id="relaxForm" hidden>
+          <textarea id="relaxInput" placeholder="Write everything that helps you relax…"></textarea>
+          <div class="relax-actions">
+            <button type="button" class="primary" id="relaxSave">Save</button>
+            <button type="button" class="link" id="relaxCancel">Cancel</button>
+          </div>
+        </div>
+      </div>
         </section>
     <section class="kit" aria-label="Emergency kit">
       <h3>💛 Emergency kit</h3>
@@ -1088,6 +1117,39 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
     const t = $("goalText").value.trim(); if (!t) return;
     $("goalText").value = ""; addGoal(t);
   });
+    // ---------- how to relax ----------
+  let relaxText = "";
+  async function loadRelax() {
+    if (!sb) return;
+    const { data, error } = await sb.from("relax").select("text").limit(1);
+    if (error) return;
+    relaxText = (data && data[0] && data[0].text) || "";
+    renderRelax();
+  }
+  function renderRelax() {
+    const box = $("relaxText");
+    box.textContent = relaxText || "Nothing here yet. Tap Edit to write down what helps you unwind.";
+    box.parentElement.classList.toggle("muted", !relaxText);
+  }
+  $("relaxHead").onclick = () => {
+    const open = $("relaxBody").hidden;
+    $("relaxBody").hidden = !open;
+    $("relaxToggle").textContent = open ? "−" : "+";
+  };
+  $("relaxEdit").onclick = (e) => {
+    e.stopPropagation();
+    if ($("relaxBody").hidden) { $("relaxBody").hidden = false; $("relaxToggle").textContent = "−"; }
+    $("relaxView").hidden = true; $("relaxForm").hidden = false;
+    $("relaxInput").value = relaxText; $("relaxInput").focus();
+  };
+  $("relaxCancel").onclick = () => { $("relaxForm").hidden = true; $("relaxView").hidden = false; };
+  $("relaxSave").onclick = async () => {
+    relaxText = $("relaxInput").value;
+    $("relaxForm").hidden = true; $("relaxView").hidden = false; renderRelax();
+    if (!sb) return;
+    const { error } = await sb.from("relax").upsert({ text: relaxText, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    if (error) setStatus("Couldn’t save relax notes: " + error.message);
+  };
   // ---------- emergency kit ----------
   const kit = [];
   async function loadKit() {
@@ -1164,14 +1226,14 @@ form{display:grid;gap:12px;border-top:2px dashed var(--rule);padding-top:16px}
   // ---------- sign in ----------
   $("loginPanda").innerHTML = PANDA_HEAD;
   function showLogin(msg) {
-    uid = null; entries.clear(); signed.clear(); goals.length = 0; renderGoals();kit.length = 0; renderKit();
+      uid = null; entries.clear(); signed.clear(); goals.length = 0; renderGoals(); kit.length = 0; renderKit(); relaxText = ""; renderRelax();
     $("app").hidden = true; $("login").hidden = false;
     $("loginMsg").textContent = msg || "";
   }
   function startApp(session) {
     uid = session.user.id;
     $("login").hidden = true; $("app").hidden = false; $("attachRow").hidden = false;
-    render(); store.load(); loadGoals(); loadKit();
+    render(); store.load(); loadGoals(); loadKit();loadRelax();
   }
   let authMode = "signin";
   const setMsg = (t, ok) => { const m = $("loginMsg"); m.textContent = t || ""; m.classList.toggle("ok", !!ok); };
